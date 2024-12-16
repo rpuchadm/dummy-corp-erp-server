@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: dummy-corp-erp-namespace
+data:
+  POSTGRES_USER: "user"
+  POSTGRES_PASSWORD: "password"
+  POSTGRES_DB: "mydatabase"
+---
+
