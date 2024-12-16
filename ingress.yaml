@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: public
   rules:
-    - host: post.mydomain.com
+    - host: erp.mydomain.com
       http:
         paths:
           - path: /corp-erp-api/?(.*)
