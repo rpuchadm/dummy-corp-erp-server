@@ -226,10 +226,10 @@ func getPersonsHandler(connStr string) http.HandlerFunc {
 		}
 
 		// SQL para obtener todas las personas
-		query := `SELECT id, dni, nombre, apellidos, email, telefono, created_at FROM messages;`
+		query := `SELECT id, dni, nombre, apellidos, email, telefono, created_at FROM persons;`
 		rows, err := db.Query(query)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al obtener los mensajes: %v"}`, err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf(`{"error": "Error al obtener las personas: %v"}`, err), http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
