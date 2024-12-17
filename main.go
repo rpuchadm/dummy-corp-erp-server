@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -156,6 +157,7 @@ func main() {
 
 	// Manejadores de las rutas
 	http.HandleFunc("/auth", withLogging(corsMiddleware(withAuth(getAuthHandler, token))))
+	http.HandleFunc("/person", withLogging(corsMiddleware(withAuth(postPersonHandler(connStr), token))))
 	http.HandleFunc("/init", withLogging(initTable(connStr)))
 	http.HandleFunc("/clean", withLogging(dropTable(connStr)))
 	http.HandleFunc("/status", withLogging(checkTable(connStr)))
@@ -188,6 +190,61 @@ func withAuth(handler http.HandlerFunc, token string) http.HandlerFunc {
 
 		// Ejecutar el manejador original
 		handler(w, r)
+	}
+}
+
+type PersonPostSent struct {
+	Dni       string `json:"dni"`
+	Nombre    string `json:"nombre"`
+	Apellidos string `json:"apellidos"`
+	Email     string `json:"email"`
+	Telefono  string `json:"telefono"`
+}
+
+func postPersonHandler(connStr string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Abre la conexión a la base de datos
+		var err error
+		db, err := openDatabaseConnection(connStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		// Verifica que el método sea POST
+		if r.Method != http.MethodPost {
+			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parsea el cuerpo de la solicitud en json
+		var person PersonPostSent
+		if err := json.NewDecoder(r.Body).Decode(&person); err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "Error al parsear el cuerpo de la solicitud: %v"}`, err), http.StatusBadRequest)
+			return
+		}
+
+		// Verifica que los campos no estén vacíos
+		if person.Dni == "" || person.Nombre == "" || person.Apellidos == "" || person.Email == "" {
+			http.Error(w, `{"error": "Los campos dni, nombre, apellidos y email son requeridos"}`, http.StatusBadRequest)
+			return
+		}
+
+		// SQL para insertar un mensaje
+		var id int
+		query := `INSERT INTO persons (dni, nombre, apellidos, email, telefono) VALUES ($1, $2, $3, $4, $5) RETURNING id;`
+		err = db.QueryRow(query, person.Dni, person.Nombre, person.Apellidos, person.Email, person.Telefono).Scan(&id)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "Error al insertar la persona: %v"}`, err), http.StatusInternalServerError)
+			return
+		}
+
+		//tiempo de espera de 2 segundos para poner drama
+		time.Sleep(2 * time.Second)
+
+		// Responde con un mensaje en formato JSON
+		w.Write([]byte(`{"message": "Persona creada", "id": ` + fmt.Sprintf("%d", id) + `}`))
 	}
 }
 
