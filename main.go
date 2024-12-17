@@ -110,7 +110,7 @@ func databaseConnString() (string, error) {
 	dbUser := os.Getenv("POSTGRES_USER")
 	dbPassword := os.Getenv("POSTGRES_PASSWORD")
 	dbName := os.Getenv("POSTGRES_DB")
-	const dbService = "postgresql"
+	dbService := os.Getenv("POSTGRES_SERVICE")
 
 	// Si alguna variable de entorno no está definida, el programa falla
 	if dbUser == "" || dbPassword == "" || dbName == "" {
@@ -142,12 +142,16 @@ func main() {
 	connStr, err := databaseConnString()
 	if err != nil {
 		log.Fatal(err)
+	} else {
+		fmt.Println("Cadena de conexión a la base de datos:", connStr)
 	}
 
 	// carga el token de autenticación desde una variable de entorno
 	token := os.Getenv("AUTH_TOKEN")
 	if token == "" {
 		log.Fatal("error: La variable de entorno AUTH_TOKEN debe estar definida")
+		//} else {
+		//	fmt.Println("Token de autenticación:", token)
 	}
 
 	//healz check
@@ -157,6 +161,7 @@ func main() {
 
 	// Manejadores de las rutas
 	http.HandleFunc("/auth", withLogging(corsMiddleware(withAuth(getAuthHandler, token))))
+	http.HandleFunc("/persons", withLogging(corsMiddleware(withAuth(getPersonsHandler(connStr), token))))
 	http.HandleFunc("/person", withLogging(corsMiddleware(withAuth(postPersonHandler(connStr), token))))
 	http.HandleFunc("/init", withLogging(initTable(connStr)))
 	http.HandleFunc("/clean", withLogging(dropTable(connStr)))
@@ -190,6 +195,66 @@ func withAuth(handler http.HandlerFunc, token string) http.HandlerFunc {
 
 		// Ejecutar el manejador original
 		handler(w, r)
+	}
+}
+
+type PersonData struct {
+	ID        int       `json:"id"`
+	Dni       string    `json:"dni"`
+	Nombre    string    `json:"nombre"`
+	Apellidos string    `json:"apellidos"`
+	Email     string    `json:"email"`
+	Telefono  *string   `json:"telefono,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func getPersonsHandler(connStr string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Abre la conexión a la base de datos
+		var err error
+		db, err := openDatabaseConnection(connStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		// Verifica que el método sea GET
+		if r.Method != http.MethodGet {
+			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+			return
+		}
+
+		// SQL para obtener todas las personas
+		query := `SELECT id, dni, nombre, apellidos, email, telefono, created_at FROM messages;`
+		rows, err := db.Query(query)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "Error al obtener los mensajes: %v"}`, err), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		// Estructura para almacenar las personas
+		var list []PersonData
+		for rows.Next() {
+			var item PersonData
+			if err := rows.Scan(&item.ID, &item.Dni, &item.Nombre, &item.Apellidos, &item.Email, &item.Telefono, &item.CreatedAt); err != nil {
+				http.Error(w, fmt.Sprintf(`{"error": "Error al escanear la persona: %v"}`, err), http.StatusInternalServerError)
+				return
+			}
+			list = append(list, item)
+		}
+
+		// Convierte las personas a formato JSON
+		jsonList, err := json.Marshal(list)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "Error al convertir las personas a JSON: %v"}`, err), http.StatusInternalServerError)
+			return
+		}
+
+		// Responde con las personas en formato JSON
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonList)
 	}
 }
 

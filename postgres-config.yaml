@@ -4,8 +4,9 @@ metadata:
   name: postgres-config
   namespace: dummy-corp-erp-namespace
 data:
-  POSTGRES_USER: "user"
-  POSTGRES_PASSWORD: "password"
   POSTGRES_DB: "mydatabase"
+  POSTGRES_PASSWORD: "password"
+  POSTGRES_SERVICE: "postgresql.dummy-corp-erp-namespace"
+  POSTGRES_USER: "user"
 ---
 
