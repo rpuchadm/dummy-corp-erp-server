@@ -9,7 +9,7 @@ docker push localhost:32000/dummy-corp-erp-golang-app:latest
 microk8s kubectl rollout restart deploy dummy-corp-erp-golang-app -n dummy-corp-erp-namespace
 
 sudo vim /etc/hosts
-127.0.0.1       post.mydomain.com
+127.0.0.1       erp.mydomain.com
 
 
 
