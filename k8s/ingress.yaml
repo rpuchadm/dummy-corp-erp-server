@@ -27,4 +27,3 @@ spec:
                 name: dummy-corp-erp-vite-nginx-app-service
                 port:
                   number: 80
-
