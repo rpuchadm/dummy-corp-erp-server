@@ -12,8 +12,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// initTable crea la tabla "persons" si no existe
-func initTable(connStr string) http.HandlerFunc {
+func initTables(connStr string) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Abre la conexión a la base de datos
@@ -24,8 +24,27 @@ func initTable(connStr string) http.HandlerFunc {
 		}
 		defer db.Close()
 
-		// SQL para crear la tabla si no existe
-		createTableSQL := `
+		err = initTablePersons(db)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
+			return
+		}
+		err = initTableAuthClients(db)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Responde json indicando que las tablas se crearon o ya existían
+		w.Write([]byte(`{"message": "Tablas creadas o ya existentes"}`))
+	}
+}
+
+// initTablePersons crea la tabla "persons" si no existe
+func initTablePersons(db *sql.DB) error {
+
+	// SQL para crear la tabla si no existe
+	createTableSQL := `
 		CREATE TABLE IF NOT EXISTS PERSONS (
 			id SERIAL PRIMARY KEY,
 			dni VARCHAR(32) NOT NULL,
@@ -38,19 +57,37 @@ func initTable(connStr string) http.HandlerFunc {
 			CONSTRAINT telefono_check CHECK (telefono ~ '^[0-9]+$')
 		);`
 
-		// Ejecuta la creación de la tabla
-		_, err = db.Exec(createTableSQL)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Error al crear la tabla: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		// Responde json indicando que la tabla se creó o ya existe
-		w.Write([]byte(`{"message": "Tabla 'persons' creada o ya existe"}`))
+	// Ejecuta la creación de la tabla
+	_, err := db.Exec(createTableSQL)
+	if err != nil {
+		return fmt.Errorf("error al crear la tabla persons: %v", err)
 	}
+
+	return nil
 }
 
-func dropTable(connStr string) http.HandlerFunc {
+// inintTableAuthClients crea la tabla "auth_clients" si no existe
+func initTableAuthClients(db *sql.DB) error {
+
+	// SQL para crear la tabla si no existe
+	createTableSQL := `
+		CREATE TABLE IF NOT EXISTS auth_clients (
+			id SERIAL PRIMARY KEY,
+			client_id VARCHAR(32) NOT NULL,
+			client_url VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);`
+
+	// Ejecuta la creación de la tabla
+	_, err := db.Exec(createTableSQL)
+	if err != nil {
+		return fmt.Errorf("error al crear la tabla auth_clients: %v", err)
+	}
+
+	return nil
+}
+
+func dropTables(connStr string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Abre la conexión a la base de datos
@@ -61,19 +98,47 @@ func dropTable(connStr string) http.HandlerFunc {
 		}
 		defer db.Close()
 
-		// SQL para eliminar la tabla "persons"
-		dropTableSQL := `DROP TABLE IF EXISTS persons;`
-
-		// Ejecuta la eliminación de la tabla
-		_, err = db.Exec(dropTableSQL)
+		err = dropTablePersons(db)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error al eliminar la tabla: %v", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
 			return
 		}
 
-		// Responde json indicando que la tabla se eliminó o no existía
-		w.Write([]byte(`{"message": "Tabla 'persons' eliminada o no existía"}`))
+		err = dropTableAuthClients(db)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Responde json indicando que las tablas se eliminaron o no existían
+		w.Write([]byte(`{"message": "Tablas eliminadas o no existían"}`))
 	}
+}
+
+func dropTablePersons(db *sql.DB) error {
+
+	// SQL para eliminar la tabla "persons"
+	dropTableSQL := `DROP TABLE IF EXISTS persons;`
+
+	// Ejecuta la eliminación de la tabla
+	_, err := db.Exec(dropTableSQL)
+	if err != nil {
+		return fmt.Errorf("error al eliminar la tabla persons: %v", err)
+	}
+	return nil
+}
+
+func dropTableAuthClients(db *sql.DB) error {
+
+	// SQL para eliminar la tabla "auth_clients"
+	dropTableSQL := `DROP TABLE IF EXISTS auth_clients;`
+
+	// Ejecuta la eliminación de la tabla
+	_, err := db.Exec(dropTableSQL)
+	if err != nil {
+		return fmt.Errorf("error al eliminar la tabla auth_clients: %v", err)
+	}
+	return nil
 }
 
 // checkTable verifica si la tabla "persons" existe
@@ -163,8 +228,8 @@ func main() {
 	http.HandleFunc("/auth", withLogging(corsMiddleware(withAuth(getAuthHandler, auth_token))))
 	http.HandleFunc("/persons", withLogging(corsMiddleware(withAuth(getPersonsHandler(connStr), auth_token))))
 	http.HandleFunc("/person", withLogging(corsMiddleware(withAuth(postPersonHandler(connStr), auth_token))))
-	http.HandleFunc("/init", withLogging(initTable(connStr)))
-	http.HandleFunc("/clean", withLogging(dropTable(connStr)))
+	http.HandleFunc("/init", withLogging(initTables(connStr)))
+	http.HandleFunc("/clean", withLogging(dropTables(connStr)))
 	http.HandleFunc("/status", withLogging(checkTable(connStr)))
 	//manejador por defecto 404
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -178,8 +243,8 @@ func main() {
 }
 
 func getAuthHandler(w http.ResponseWriter, r *http.Request) {
-	// la cache en el cliente puede ser de dos minutos
-	//w.Header().Set("Cache-Control", "public, max-age=120")
+	// la cache en el cliente podría ser de dos minutos
+	// w.Header().Set("Cache-Control", "public, max-age=120")
 	w.Write([]byte(`{"status": "success"}`))
 }
 

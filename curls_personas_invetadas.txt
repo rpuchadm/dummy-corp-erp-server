@@ -1,0 +1,111 @@
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "12345678A",
+           "nombre": "Juan",
+           "apellidos": "Martínez López",
+           "email": "juanmartinez@mydomain.com",
+           "telefono": "612345678"
+         }'
+
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "87654321B",
+           "nombre": "María",
+           "apellidos": "García Sánchez",
+           "email": "mariagarciasanchez@mydomain.com",
+           "telefono": "655987321"
+         }'
+
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "23456789C",
+           "nombre": "Carlos",
+           "apellidos": "Fernández Ruiz",
+           "email": "carlosfernandez@mydomain.com",
+           "telefono": "699123456"
+         }'
+
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "34567890D",
+           "nombre": "Laura",
+           "apellidos": "Gómez Pérez",
+           "email": "lauragomez@mydomain.com",
+           "telefono": "611234567"
+         }'
+
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "45678901E",
+           "nombre": "Pedro",
+           "apellidos": "Sánchez Martín",
+           "email": "pedrosanchez@mydomain.com",
+           "telefono": "622345678"
+         }'
+
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "56789012F",
+           "nombre": "Ana",
+           "apellidos": "López González",
+           "email": "analopez@mydomain.com",
+           "telefono": "633456789"
+         }'
+
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "67890123G",
+           "nombre": "David",
+           "apellidos": "Ruiz Hernández",
+           "email": "davidruiz@mydomain.com",
+           "telefono": "644567890"
+         }'
+
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "78901234H",
+           "nombre": "Sofía",
+           "apellidos": "Díaz Rodríguez",
+           "email": "sofiadiaz@mydomain.com",
+           "telefono": "655678901"
+         }'
+
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "89012345I",
+           "nombre": "Javier",
+           "apellidos": "Torres Moreno",
+           "email": "javier.torres@mydomain.com",
+           "telefono": "666789012"
+         }'
+
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer XXXXXXXXXX" \
+     -d '{
+           "dni": "90123456J",
+           "nombre": "Elena",
+           "apellidos": "Castro Navarro",
+           "email": "elenacastro@mydomain.com",
+           "telefono": "677890123"
+         }'
+
+
