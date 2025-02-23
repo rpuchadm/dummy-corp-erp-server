@@ -147,8 +147,8 @@ func main() {
 	}
 
 	// carga el token de autenticación desde una variable de entorno
-	token := os.Getenv("AUTH_TOKEN")
-	if token == "" {
+	auth_token := os.Getenv("AUTH_TOKEN")
+	if auth_token == "" {
 		log.Fatal("error: La variable de entorno AUTH_TOKEN debe estar definida")
 		//} else {
 		//	fmt.Println("Token de autenticación:", token)
@@ -160,9 +160,9 @@ func main() {
 	})
 
 	// Manejadores de las rutas
-	http.HandleFunc("/auth", withLogging(corsMiddleware(withAuth(getAuthHandler, token))))
-	http.HandleFunc("/persons", withLogging(corsMiddleware(withAuth(getPersonsHandler(connStr), token))))
-	http.HandleFunc("/person", withLogging(corsMiddleware(withAuth(postPersonHandler(connStr), token))))
+	http.HandleFunc("/auth", withLogging(corsMiddleware(withAuth(getAuthHandler, auth_token))))
+	http.HandleFunc("/persons", withLogging(corsMiddleware(withAuth(getPersonsHandler(connStr), auth_token))))
+	http.HandleFunc("/person", withLogging(corsMiddleware(withAuth(postPersonHandler(connStr), auth_token))))
 	http.HandleFunc("/init", withLogging(initTable(connStr)))
 	http.HandleFunc("/clean", withLogging(dropTable(connStr)))
 	http.HandleFunc("/status", withLogging(checkTable(connStr)))
