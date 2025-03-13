@@ -69,6 +69,21 @@ type AuthClientPostSent struct {
 	ClientUrl string `json:"client_url"`
 }
 
+func authClientHandler(connStr string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			postAuthClientHandler(connStr)(w, r)
+		case http.MethodPut:
+			putAuthClientHandler(connStr)(w, r)
+		case http.MethodDelete:
+			deleteAuthClientHandler(connStr)(w, r)
+		default:
+			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+		}
+	}
+}
+
 func postAuthClientHandler(connStr string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
