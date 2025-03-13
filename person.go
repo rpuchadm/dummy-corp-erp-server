@@ -122,3 +122,83 @@ func postPersonHandler(connStr string) http.HandlerFunc {
 		w.Write([]byte(`{"message": "Persona creada", "id": ` + fmt.Sprintf("%d", id) + `}`))
 	}
 }
+
+func putPersonHandler(connStr string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Abre la conexión a la base de datos
+		var err error
+		db, err := openDatabaseConnection(connStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		// Verifica que el método sea PUT
+		if r.Method != http.MethodPut {
+			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parsea el cuerpo de la solicitud en json
+		var person PersonData
+		if err := json.NewDecoder(r.Body).Decode(&person); err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "Error al parsear el cuerpo de la solicitud: %v"}`, err), http.StatusBadRequest)
+			return
+		}
+
+		// Verifica que el ID no sea cero
+		if person.ID == 0 {
+			http.Error(w, `{"error": "El campo id es requerido"}`, http.StatusBadRequest)
+			return
+		}
+
+		// SQL para actualizar una persona
+		query := `UPDATE persons SET dni = $1, nombre = $2, apellidos = $3, email = $4, telefono = $5 WHERE id = $6;`
+		_, err = db.Exec(query, person.Dni, person.Nombre, person.Apellidos, person.Email, person.Telefono, person.ID)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "Error al actualizar la persona: %v"}`, err), http.StatusInternalServerError)
+			return
+		}
+
+		// Responde con un mensaje en formato JSON
+		w.Write([]byte(`{"message": "Persona actualizada"}`))
+	}
+}
+
+func deletePersonHandler(connStr string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Abre la conexión a la base de datos
+		var err error
+		db, err := openDatabaseConnection(connStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		// Verifica que el método sea DELETE
+		if r.Method != http.MethodDelete {
+			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parsea el ID de la persona
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			http.Error(w, `{"error": "El campo id es requerido"}`, http.StatusBadRequest)
+			return
+		}
+
+		// SQL para eliminar una persona
+		query := `DELETE FROM persons WHERE id = $1;`
+		_, err = db.Exec(query, id)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "Error al eliminar la persona: %v"}`, err), http.StatusInternalServerError)
+			return
+		}
+
+		// Responde con un mensaje en formato JSON
+		w.Write([]byte(`{"message": "Persona eliminada"}`))
+	}
+}

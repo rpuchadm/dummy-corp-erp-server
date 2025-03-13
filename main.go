@@ -40,6 +40,12 @@ func main() {
 	http.HandleFunc("/auth", withLogging(corsMiddleware(withAuth(getAuthHandler, auth_token))))
 	http.HandleFunc("/persons", withLogging(corsMiddleware(withAuth(getPersonsHandler(connStr), auth_token))))
 	http.HandleFunc("/person", withLogging(corsMiddleware(withAuth(postPersonHandler(connStr), auth_token))))
+	http.HandleFunc("/person/", withLogging(corsMiddleware(withAuth(putPersonHandler(connStr), auth_token))))
+	http.HandleFunc("/person/", withLogging(corsMiddleware(withAuth(deletePersonHandler(connStr), auth_token))))
+	http.HandleFunc("/authclients", withLogging(corsMiddleware(withAuth(getAuthClientsHandler(connStr), auth_token))))
+	http.HandleFunc("/authclient", withLogging(corsMiddleware(withAuth(postAuthClientHandler(connStr), auth_token))))
+	http.HandleFunc("/authclient/", withLogging(corsMiddleware(withAuth(putAuthClientHandler(connStr), auth_token))))
+	http.HandleFunc("/authclient/", withLogging(corsMiddleware(withAuth(deleteAuthClientHandler(connStr), auth_token))))
 
 	// post json con client_id y client_url
 	http.HandleFunc("/authinit", withLogging(corsMiddleware(withAuth(postAuthInitHandler(connStr), auth_token))))
