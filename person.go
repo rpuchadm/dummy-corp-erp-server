@@ -159,13 +159,6 @@ func personHandler(connStr string) http.HandlerFunc {
 	}
 }
 
-func errJsonStatus(w http.ResponseWriter, msg string, status int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	data := map[string]string{"error": msg}
-	json.NewEncoder(w).Encode(data)
-}
-
 type PersonPostSent struct {
 	Dni       string `json:"dni"`
 	Nombre    string `json:"nombre"`

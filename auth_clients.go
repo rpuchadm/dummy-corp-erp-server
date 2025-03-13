@@ -27,7 +27,7 @@ func getAuthClientsHandler(connStr string) http.HandlerFunc {
 
 		// Verifica que el método sea GET
 		if r.Method != http.MethodGet {
-			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+			errJsonStatus(w, `Método no permitido`, http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -35,7 +35,7 @@ func getAuthClientsHandler(connStr string) http.HandlerFunc {
 		query := `SELECT id, client_id, client_url, created_at FROM auth_clients;`
 		rows, err := db.Query(query)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al obtener los clientes: %v"}`, err), http.StatusInternalServerError)
+			errJsonStatus(w, fmt.Sprintf(`Error al obtener los clientes: %v`, err), http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -45,7 +45,7 @@ func getAuthClientsHandler(connStr string) http.HandlerFunc {
 		for rows.Next() {
 			var item AuthClient
 			if err := rows.Scan(&item.ID, &item.ClientID, &item.ClientUrl, &item.CreatedAt); err != nil {
-				http.Error(w, fmt.Sprintf(`{"error": "Error al escanear el cliente: %v"}`, err), http.StatusInternalServerError)
+				errJsonStatus(w, fmt.Sprintf(`Error al escanear el cliente: %v`, err), http.StatusInternalServerError)
 				return
 			}
 			list = append(list, item)
@@ -54,7 +54,7 @@ func getAuthClientsHandler(connStr string) http.HandlerFunc {
 		// Convierte los clientes a formato JSON
 		jsonList, err := json.Marshal(list)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al convertir los clientes a JSON: %v"}`, err), http.StatusInternalServerError)
+			errJsonStatus(w, fmt.Sprintf(`Error al convertir los clientes a JSON: %v`, err), http.StatusInternalServerError)
 			return
 		}
 
@@ -79,7 +79,7 @@ func authClientHandler(connStr string) http.HandlerFunc {
 		case http.MethodDelete:
 			deleteAuthClientHandler(connStr)(w, r)
 		default:
-			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+			errJsonStatus(w, `Método no permitido`, http.StatusMethodNotAllowed)
 		}
 	}
 }
@@ -97,7 +97,7 @@ func postAuthClientHandler(connStr string) http.HandlerFunc {
 
 		// Verifica que el método sea POST
 		if r.Method != http.MethodPost {
-			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+			errJsonStatus(w, `Método no permitido`, http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -105,7 +105,7 @@ func postAuthClientHandler(connStr string) http.HandlerFunc {
 		var sent AuthClientPostSent
 		err = json.NewDecoder(r.Body).Decode(&sent)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al decodificar el JSON: %v"}`, err), http.StatusBadRequest)
+			errJsonStatus(w, fmt.Sprintf(`Error al decodificar el JSON: %v`, err), http.StatusBadRequest)
 			return
 		}
 
@@ -117,7 +117,7 @@ func postAuthClientHandler(connStr string) http.HandlerFunc {
 		var item AuthClient
 		err = row.Scan(&item.ID, &item.CreatedAt)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al insertar el cliente: %v"}`, err), http.StatusInternalServerError)
+			errJsonStatus(w, fmt.Sprintf(`Error al insertar el cliente: %v`, err), http.StatusInternalServerError)
 			return
 		}
 		item.ClientID = sent.ClientID
@@ -126,7 +126,7 @@ func postAuthClientHandler(connStr string) http.HandlerFunc {
 		// Convierte el cliente insertado a formato JSON
 		jsonItem, err := json.Marshal(item)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al convertir el cliente a JSON: %v"}`, err), http.StatusInternalServerError)
+			errJsonStatus(w, fmt.Sprintf(`Error al convertir el cliente a JSON: %v`, err), http.StatusInternalServerError)
 			return
 		}
 
@@ -149,7 +149,7 @@ func putAuthClientHandler(connStr string) http.HandlerFunc {
 
 		// Verifica que el método sea PUT
 		if r.Method != http.MethodPut {
-			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+			errJsonStatus(w, `Método no permitido`, http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -157,7 +157,7 @@ func putAuthClientHandler(connStr string) http.HandlerFunc {
 		var sent AuthClient
 		err = json.NewDecoder(r.Body).Decode(&sent)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al decodificar el JSON: %v"}`, err), http.StatusBadRequest)
+			errJsonStatus(w, fmt.Sprintf(`Error al decodificar el JSON: %v`, err), http.StatusBadRequest)
 			return
 		}
 
@@ -169,14 +169,14 @@ func putAuthClientHandler(connStr string) http.HandlerFunc {
 		var createdAt string
 		err = row.Scan(&createdAt)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al actualizar el cliente: %v"}`, err), http.StatusInternalServerError)
+			errJsonStatus(w, fmt.Sprintf(`Error al actualizar el cliente: %v`, err), http.StatusInternalServerError)
 			return
 		}
 
 		// Convierte la fecha de creación a formato JSON
 		jsonCreatedAt, err := json.Marshal(createdAt)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al convertir la fecha de creación a JSON: %v"}`, err), http.StatusInternalServerError)
+			errJsonStatus(w, fmt.Sprintf(`Error al convertir la fecha de creación a JSON: %v`, err), http.StatusInternalServerError)
 			return
 		}
 
@@ -199,7 +199,7 @@ func deleteAuthClientHandler(connStr string) http.HandlerFunc {
 
 		// Verifica que el método sea DELETE
 		if r.Method != http.MethodDelete {
-			http.Error(w, `{"error": "Método no permitido"}`, http.StatusMethodNotAllowed)
+			errJsonStatus(w, `Método no permitido`, http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -207,7 +207,7 @@ func deleteAuthClientHandler(connStr string) http.HandlerFunc {
 		query := `DELETE FROM auth_clients;`
 		_, err = db.Exec(query)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "Error al eliminar los clientes: %v"}`, err), http.StatusInternalServerError)
+			errJsonStatus(w, fmt.Sprintf(`Error al eliminar los clientes: %v`, err), http.StatusInternalServerError)
 			return
 		}
 
