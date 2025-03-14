@@ -149,6 +149,9 @@ func getAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 				errJsonStatus(w, fmt.Sprintf(`Error al obtener el cliente: %v`, err), http.StatusInternalServerError)
 				return
 			}
+		} else {
+			errJsonStatus(w, `Cliente no encontrado`, http.StatusNotFound)
+			return
 		}
 
 		// Convierte el cliente a formato JSON
@@ -252,27 +255,15 @@ func putAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 		}
 
 		// SQL para actualizar un cliente
-		query := `UPDATE auth_clients SET client_id = $1, client_url = $2 WHERE id = $3 RETURNING created_at;`
-		row := db.QueryRow(query, sent.ClientID, sent.ClientUrl, sent.ID)
-
-		// Estructura para almacenar la fecha de creación
-		var createdAt string
-		err = row.Scan(&createdAt)
+		query := `UPDATE auth_clients SET client_id = $1, client_url = $2 WHERE id = $3;`
+		_, err = db.Exec(query, sent.ClientID, sent.ClientUrl, sent.ID)
 		if err != nil {
 			errJsonStatus(w, fmt.Sprintf(`Error al actualizar el cliente: %v`, err), http.StatusInternalServerError)
 			return
 		}
 
-		// Convierte la fecha de creación a formato JSON
-		jsonCreatedAt, err := json.Marshal(createdAt)
-		if err != nil {
-			errJsonStatus(w, fmt.Sprintf(`Error al convertir la fecha de creación a JSON: %v`, err), http.StatusInternalServerError)
-			return
-		}
-
-		// Responde con la fecha de creación en formato JSON
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(jsonCreatedAt)
+		// Responde con un mensaje en formato JSON
+		w.Write([]byte(`{"message": "Cliente actualizado"}`))
 	}
 }
 
@@ -299,7 +290,7 @@ func deleteAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 		}
 
 		// SQL para eliminar todos los clientes
-		query := `DELETE FROM auth_clients;`
+		query := fmt.Sprintf(`DELETE FROM auth_clients where id=%d;`, iid)
 		_, err = db.Exec(query)
 		if err != nil {
 			errJsonStatus(w, fmt.Sprintf(`Error al eliminar los clientes: %v`, err), http.StatusInternalServerError)
@@ -307,6 +298,6 @@ func deleteAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 		}
 
 		// Responde con un mensaje de éxito
-		w.Write([]byte(`{"message": "Clientes eliminados"}`))
+		w.Write([]byte(`{"message": "Cliente eliminado"}`))
 	}
 }

@@ -116,18 +116,22 @@ func personHandler(connStr string) http.HandlerFunc {
 
 			// Estructura para almacenar la persona
 			var person PersonData
-			if err := row.Scan(&person.ID, &person.Dni, &person.Nombre, &person.Apellidos, &person.Email, &person.Telefono, &person.CreatedAt); err != nil {
-				errJsonStatus(w, fmt.Sprintf(`Error al obtener la persona: %v`, err), http.StatusInternalServerError)
+			if row.Next() {
+				if err := row.Scan(&person.ID, &person.Dni, &person.Nombre, &person.Apellidos, &person.Email, &person.Telefono, &person.CreatedAt); err != nil {
+					errJsonStatus(w, fmt.Sprintf(`Error al obtener la persona: %v`, err), http.StatusInternalServerError)
+					return
+				}
+			} else {
+				errJsonStatus(w, `Persona no encontrada`, http.StatusNotFound)
 				return
 			}
 
 			// Convierte la persona a formato JSON
 			jsonPerson, err := json.Marshal(person)
-			if row.Next() {
-				if err != nil {
-					errJsonStatus(w, fmt.Sprintf(`Error al convertir la persona a JSON: %v`, err), http.StatusInternalServerError)
-					return
-				}
+
+			if err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al convertir la persona a JSON: %v`, err), http.StatusInternalServerError)
+				return
 			}
 
 			// Responde con la persona en formato JSON
