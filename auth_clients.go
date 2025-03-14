@@ -84,6 +84,8 @@ func authClientHandler(connStr string) http.HandlerFunc {
 			return
 		}
 
+		//fmt.Printf("method:%v iid: %d\n", r.Method, iid)
+
 		switch r.Method {
 		case http.MethodGet:
 			getAuthClientHandler(connStr, iid)(w, r)
@@ -105,6 +107,8 @@ func getAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 		if iid == 0 {
 			errJsonStatus(w, `IEl campo id es requerido`, http.StatusBadRequest)
 			return
+			//} else {
+			//	fmt.Printf("getAuthClientHandler iid:%d\n", iid)
 		}
 
 		// Abre la conexión a la base de datos
@@ -121,19 +125,30 @@ func getAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 			return
 		}
 
-		// Obtiene el ID del cliente
-		id := r.URL.Query().Get("id")
-
 		// SQL para obtener un cliente
-		query := `SELECT id, client_id, client_url, created_at FROM auth_clients WHERE id = $1;`
-		row := db.QueryRow(query, id)
+		query := fmt.Sprintf(`SELECT id, client_id, client_url, created_at FROM auth_clients WHERE id = %d;`, iid)
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al preparar la consulta %v %v`, query, err), http.StatusInternalServerError)
+			return
+		}
+		defer stmt.Close()
 
-		// Estructura para almacenar el cliente
-		var item AuthClient
-		err = row.Scan(&item.ID, &item.ClientID, &item.ClientUrl, &item.CreatedAt)
+		row, err := stmt.Query()
 		if err != nil {
 			errJsonStatus(w, fmt.Sprintf(`Error al obtener el cliente: %v`, err), http.StatusInternalServerError)
 			return
+		}
+		defer row.Close()
+
+		// Estructura para almacenar el cliente
+		var item AuthClient
+		if row.Next() {
+			err = row.Scan(&item.ID, &item.ClientID, &item.ClientUrl, &item.CreatedAt)
+			if err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al obtener el cliente: %v`, err), http.StatusInternalServerError)
+				return
+			}
 		}
 
 		// Convierte el cliente a formato JSON
