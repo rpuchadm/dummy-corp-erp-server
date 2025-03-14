@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -71,15 +73,61 @@ func getPersonsHandler(connStr string) http.HandlerFunc {
 func personHandler(connStr string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Obtiene el ID de la persona
+		path := strings.TrimPrefix(r.URL.Path, "/person/")
+		id := strings.Split(path, "/")[0]
+
+		// parsear el id a int
+		iid, err := strconv.Atoi(id)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al parsear el id: %v`, err), http.StatusBadRequest)
+			return
+		}
+
 		// Abre la conexión a la base de datos
-		var err error
 		db, err := openDatabaseConnection(connStr)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer db.Close()
 
-		if r.Method == http.MethodPost {
+		if r.Method == http.MethodGet {
+
+			if iid == 0 {
+				errJsonStatus(w, `El campo id es requerido`, http.StatusBadRequest)
+				return
+			}
+
+			// SQL para obtener una persona
+			query := `SELECT id, dni, nombre, apellidos, email, telefono, created_at FROM persons WHERE id = $1;`
+			row := db.QueryRow(query, iid)
+
+			// Estructura para almacenar la persona
+			var person PersonData
+			if err := row.Scan(&person.ID, &person.Dni, &person.Nombre, &person.Apellidos, &person.Email, &person.Telefono, &person.CreatedAt); err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al obtener la persona: %v`, err), http.StatusInternalServerError)
+				return
+			}
+
+			// Convierte la persona a formato JSON
+			jsonPerson, err := json.Marshal(person)
+			if err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al convertir la persona a JSON: %v`, err), http.StatusInternalServerError)
+				return
+			}
+
+			// Responde con la persona en formato JSON
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(jsonPerson)
+
+			return
+
+		} else if r.Method == http.MethodPost {
+
+			if iid != 0 {
+				errJsonStatus(w, `El campo id no puede ser diferente de 0 para insertar`, http.StatusBadRequest)
+				return
+			}
 
 			// Parsea el cuerpo de la solicitud en json
 			var person PersonPostSent
@@ -109,7 +157,14 @@ func personHandler(connStr string) http.HandlerFunc {
 			// Responde con un mensaje en formato JSON
 			w.Write([]byte(`{"message": "Persona creada", "id": ` + fmt.Sprintf("%d", id) + `}`))
 
+			return
+
 		} else if r.Method == http.MethodPut {
+
+			if iid == 0 {
+				errJsonStatus(w, `El campo id es requerido para actualizar`, http.StatusBadRequest)
+				return
+			}
 
 			// Parsea el cuerpo de la solicitud en json
 			var person PersonData
@@ -135,7 +190,14 @@ func personHandler(connStr string) http.HandlerFunc {
 			// Responde con un mensaje en formato JSON
 			w.Write([]byte(`{"message": "Persona actualizada"}`))
 
+			return
+
 		} else if r.Method == http.MethodDelete {
+
+			if iid == 0 {
+				errJsonStatus(w, `El campo id es requerido para eliminar`, http.StatusBadRequest)
+				return
+			}
 
 			// Parsea el ID de la persona
 			id := r.URL.Query().Get("id")
@@ -154,6 +216,8 @@ func personHandler(connStr string) http.HandlerFunc {
 
 			// Responde con un mensaje en formato JSON
 			w.Write([]byte(`{"message": "Persona eliminada"}`))
+
+			return
 
 		}
 	}

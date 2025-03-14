@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type AuthClient struct {
@@ -71,21 +73,89 @@ type AuthClientPostSent struct {
 
 func authClientHandler(connStr string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Obtiene el ID de la persona
+		path := strings.TrimPrefix(r.URL.Path, "/application/")
+		id := strings.Split(path, "/")[0]
+
+		// parsear el id a int
+		iid, err := strconv.Atoi(id)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al parsear el id: %v`, err), http.StatusBadRequest)
+			return
+		}
+
 		switch r.Method {
+		case http.MethodGet:
+			getAuthClientHandler(connStr, iid)(w, r)
 		case http.MethodPost:
-			postAuthClientHandler(connStr)(w, r)
+			postAuthClientHandler(connStr, iid)(w, r)
 		case http.MethodPut:
-			putAuthClientHandler(connStr)(w, r)
+			putAuthClientHandler(connStr, iid)(w, r)
 		case http.MethodDelete:
-			deleteAuthClientHandler(connStr)(w, r)
+			deleteAuthClientHandler(connStr, iid)(w, r)
 		default:
 			errJsonStatus(w, `Método no permitido`, http.StatusMethodNotAllowed)
 		}
 	}
 }
 
-func postAuthClientHandler(connStr string) http.HandlerFunc {
+func getAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		if iid == 0 {
+			errJsonStatus(w, `IEl campo id es requerido`, http.StatusBadRequest)
+			return
+		}
+
+		// Abre la conexión a la base de datos
+		var err error
+		db, err := openDatabaseConnection(connStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		// Verifica que el método sea GET
+		if r.Method != http.MethodGet {
+			errJsonStatus(w, `Método no permitido`, http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Obtiene el ID del cliente
+		id := r.URL.Query().Get("id")
+
+		// SQL para obtener un cliente
+		query := `SELECT id, client_id, client_url, created_at FROM auth_clients WHERE id = $1;`
+		row := db.QueryRow(query, id)
+
+		// Estructura para almacenar el cliente
+		var item AuthClient
+		err = row.Scan(&item.ID, &item.ClientID, &item.ClientUrl, &item.CreatedAt)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al obtener el cliente: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
+		// Convierte el cliente a formato JSON
+		jsonItem, err := json.Marshal(item)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al convertir el cliente a JSON: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
+		// Responde con el cliente en formato JSON
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonItem)
+	}
+}
+
+func postAuthClientHandler(connStr string, iid int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		if iid != 0 {
+			errJsonStatus(w, `El campo id no puede ser diferente de 0 para insertar`, http.StatusBadRequest)
+			return
+		}
 
 		// Abre la conexión a la base de datos
 		var err error
@@ -136,8 +206,13 @@ func postAuthClientHandler(connStr string) http.HandlerFunc {
 	}
 }
 
-func putAuthClientHandler(connStr string) http.HandlerFunc {
+func putAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		if iid == 0 {
+			errJsonStatus(w, `El campo id es requerido para actualizar`, http.StatusBadRequest)
+			return
+		}
 
 		// Abre la conexión a la base de datos
 		var err error
@@ -186,8 +261,13 @@ func putAuthClientHandler(connStr string) http.HandlerFunc {
 	}
 }
 
-func deleteAuthClientHandler(connStr string) http.HandlerFunc {
+func deleteAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		if iid == 0 {
+			errJsonStatus(w, `El campo id es requerido para eliminar`, http.StatusBadRequest)
+			return
+		}
 
 		// Abre la conexión a la base de datos
 		var err error
