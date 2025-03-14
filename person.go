@@ -99,8 +99,20 @@ func personHandler(connStr string) http.HandlerFunc {
 			}
 
 			// SQL para obtener una persona
-			query := `SELECT id, dni, nombre, apellidos, email, telefono, created_at FROM persons WHERE id = $1;`
-			row := db.QueryRow(query, iid)
+			query := fmt.Sprintf(`SELECT id, dni, nombre, apellidos, email, telefono, created_at FROM persons WHERE id = %d;`, iid)
+			stmt, err := db.Prepare(query)
+			if err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al preparar la consulta %v %v`, query, err), http.StatusInternalServerError)
+				return
+			}
+			defer stmt.Close()
+
+			row, err := stmt.Query()
+			if err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al obtener la application: %v`, err), http.StatusInternalServerError)
+				return
+			}
+			defer row.Close()
 
 			// Estructura para almacenar la persona
 			var person PersonData
@@ -111,9 +123,11 @@ func personHandler(connStr string) http.HandlerFunc {
 
 			// Convierte la persona a formato JSON
 			jsonPerson, err := json.Marshal(person)
-			if err != nil {
-				errJsonStatus(w, fmt.Sprintf(`Error al convertir la persona a JSON: %v`, err), http.StatusInternalServerError)
-				return
+			if row.Next() {
+				if err != nil {
+					errJsonStatus(w, fmt.Sprintf(`Error al convertir la persona a JSON: %v`, err), http.StatusInternalServerError)
+					return
+				}
 			}
 
 			// Responde con la persona en formato JSON
