@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -24,11 +25,11 @@ import (
 */
 
 type PersonApp struct {
-	ID        int       `json:"id"`
-	PersonID  int       `json:"person_id"`
-	AppID     int       `json:"app_id"`
-	CreatedAt time.Time `json:"created_at"`
-	Profile   *string   `json:"profile"`
+	ID           int       `json:"id"`
+	PersonID     int       `json:"person_id"`
+	AuthClientId int       `json:"auth_client_id"`
+	CreatedAt    time.Time `json:"created_at"`
+	Profile      *string   `json:"profile"`
 }
 
 func personAppHandler(connStr string) http.HandlerFunc {
@@ -79,11 +80,11 @@ func personAppHandler(connStr string) http.HandlerFunc {
 			// SQL para obtener una PersonApp
 			query := fmt.Sprintf(`
 				SELECT
-					id, person_id, app_id, created_at, profile
+					id, person_id, auth_client_id, created_at, profile
 				FROM
 					person_auth_client
 				WHERE
-					person_id = %d AND app_id = %d;`, iidPer, iidApp)
+					person_id = %d AND auth_client_id = %d;`, iidPer, iidApp)
 			stmt, err := db.Prepare(query)
 			if err != nil {
 				errJsonStatus(w, fmt.Sprintf(`Error al preparar la consulta %v %v`, query, err), http.StatusInternalServerError)
@@ -101,7 +102,7 @@ func personAppHandler(connStr string) http.HandlerFunc {
 			// Estructura para almacenar la personapp
 			var personApp PersonApp
 			if row.Next() {
-				if err := row.Scan(&personApp.ID, &personApp.PersonID, &personApp.AppID, &personApp.CreatedAt, &personApp.Profile); err != nil {
+				if err := row.Scan(&personApp.ID, &personApp.PersonID, &personApp.AuthClientId, &personApp.CreatedAt, &personApp.Profile); err != nil {
 					errJsonStatus(w, fmt.Sprintf(`Error al obtener la personapp: %v`, err), http.StatusInternalServerError)
 					return
 				}
@@ -126,4 +127,68 @@ func personAppHandler(connStr string) http.HandlerFunc {
 			//} else if r.Method == http.MethodPost {
 		}
 	}
+}
+
+func postgres_personapp_by_auth_client_id(db *sql.DB, id_app int) ([]PersonApp, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			id, person_id, auth_client_id, created_at, profile
+		FROM
+			person_auth_client
+		WHERE
+			auth_client_id = %d;`, id_app)
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []PersonApp
+	for rows.Next() {
+		var item PersonApp
+		if err := rows.Scan(&item.ID, &item.PersonID, &item.AuthClientId, &item.CreatedAt, &item.Profile); err != nil {
+			return nil, err
+		}
+		list = append(list, item)
+	}
+
+	return list, nil
+}
+
+func postgres_personapp_by_person_id(db *sql.DB, id_person int) ([]PersonApp, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			id, person_id, auth_client_id, created_at, profile
+		FROM
+			person_auth_client
+		WHERE
+			person_id = %d;`, id_person)
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []PersonApp
+	for rows.Next() {
+		var item PersonApp
+		if err := rows.Scan(&item.ID, &item.PersonID, &item.AuthClientId, &item.CreatedAt, &item.Profile); err != nil {
+			return nil, err
+		}
+		list = append(list, item)
+	}
+
+	return list, nil
 }

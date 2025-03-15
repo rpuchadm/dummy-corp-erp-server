@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -359,4 +360,51 @@ func tokenCreate(length int) string {
 		b[i] = charset[rand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+type AuthClientShort struct {
+	ID        int    `json:"id"`
+	ClientID  string `json:"client_id"`
+	ClientUrl string `json:"client_url"`
+}
+
+func postgres_auth_client_by_person_id(db *sql.DB, id_person int) ([]AuthClientShort, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			id, client_id, client_url
+		FROM
+			auth_clients
+		WHERE
+			id in (
+				SELECT
+					auth_client_id
+				FROM
+					person_auth_client
+				WHERE
+					person_id = %d
+			);`, id_person)
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []AuthClientShort
+	for rows.Next() {
+		var item AuthClientShort
+		if err := rows.Scan(&item.ID,
+			&item.ClientID, &item.ClientUrl); err != nil {
+			return nil, err
+		}
+		list = append(list, item)
+	}
+
+	return list, nil
 }

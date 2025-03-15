@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -98,36 +99,35 @@ func personHandler(connStr string) http.HandlerFunc {
 				return
 			}
 
-			// SQL para obtener una persona
-			query := fmt.Sprintf(`SELECT id, dni, nombre, apellidos, email, telefono, created_at FROM persons WHERE id = %d;`, iid)
-			stmt, err := db.Prepare(query)
+			person, err := postgres_person_by_id(db, iid)
 			if err != nil {
-				errJsonStatus(w, fmt.Sprintf(`Error al preparar la consulta %v %v`, query, err), http.StatusInternalServerError)
+				errJsonStatus(w, fmt.Sprintf(`Error al obtener la persona: %v`, err), http.StatusInternalServerError)
 				return
 			}
-			defer stmt.Close()
 
-			row, err := stmt.Query()
+			lpersonapp, err := postgres_personapp_by_person_id(db, iid)
 			if err != nil {
-				errJsonStatus(w, fmt.Sprintf(`Error al obtener la application: %v`, err), http.StatusInternalServerError)
-				return
-			}
-			defer row.Close()
-
-			// Estructura para almacenar la persona
-			var person PersonData
-			if row.Next() {
-				if err := row.Scan(&person.ID, &person.Dni, &person.Nombre, &person.Apellidos, &person.Email, &person.Telefono, &person.CreatedAt); err != nil {
-					errJsonStatus(w, fmt.Sprintf(`Error al obtener la persona: %v`, err), http.StatusInternalServerError)
-					return
-				}
-			} else {
-				errJsonStatus(w, `Persona no encontrada`, http.StatusNotFound)
+				errJsonStatus(w, fmt.Sprintf(`Error al obtener la personaapp: %v`, err), http.StatusInternalServerError)
 				return
 			}
 
-			// Convierte la persona a formato JSON
-			jsonPerson, err := json.Marshal(person)
+			lapp, err := postgres_auth_client_by_person_id(db, iid)
+			if err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al obtener la app: %v`, err), http.StatusInternalServerError)
+				return
+			}
+
+			data := make(map[string]any)
+			data["person"] = person
+			if len(lpersonapp) > 0 {
+				data["lpersonapp"] = lpersonapp
+			}
+			if len(lapp) > 0 {
+				data["lapp"] = lapp
+			}
+
+			// Convierte data a formato JSON
+			jsonPerson, err := json.Marshal(data)
 
 			if err != nil {
 				errJsonStatus(w, fmt.Sprintf(`Error al convertir la persona a JSON: %v`, err), http.StatusInternalServerError)
@@ -239,6 +239,32 @@ func personHandler(connStr string) http.HandlerFunc {
 
 		}
 	}
+}
+
+func postgres_person_by_id(db *sql.DB, id int) (*PersonData, error) {
+
+	query := fmt.Sprintf(`SELECT id, dni, nombre, apellidos, email, telefono, created_at FROM persons WHERE id = %d;`, id)
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	row, err := stmt.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer row.Close()
+
+	person := &PersonData{}
+	if row.Next() {
+		if err := row.Scan(&person.ID, &person.Dni, &person.Nombre, &person.Apellidos, &person.Email, &person.Telefono, &person.CreatedAt); err != nil {
+			return person, err
+		}
+	} else {
+		return nil, fmt.Errorf("persona no encontrada con id %d", id)
+	}
+	return person, nil
 }
 
 type PersonPostSent struct {

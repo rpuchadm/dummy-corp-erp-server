@@ -43,12 +43,90 @@ func initTables(connStr string) http.HandlerFunc {
 			return
 		}
 
+		err = insertPersons(db)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
+			return
+		}
+
+		err = insertAuthClients(db)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
+			return
+		}
+
+		err = insertPersonAuthClient(db)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
+			return
+		}
+
 		// Responde json indicando que las tablas se crearon o ya existían
 		w.Write([]byte(`{"message": "Tablas creadas o ya existentes"}`))
 	}
 }
 
-// initTablePersons crea la tabla "person_auth_client" si no existe
+func insertPersons(db *sql.DB) error {
+
+	// SQL para insertar personas
+	insertSQL := `
+		INSERT INTO persons (dni, nombre, apellidos, email, telefono)
+		VALUES 
+			('12345678A', 'Juan', 'Pérez', 'jperez@mydomain.com', '123456789'),
+			('87654321B', 'María', 'López', 'mlo@mydomain.com', '987654321'),
+			('11111111C', 'Pedro', 'García', 'pg@mydomain.com', '111111111');`
+
+	// Ejecuta
+	_, err := db.Exec(insertSQL)
+	if err != nil {
+		return fmt.Errorf("error al insertar personas: %v", err)
+	}
+
+	return nil
+}
+
+func insertAuthClients(db *sql.DB) error {
+
+	// SQL para insertar clientes
+	insertSQL := `
+		INSERT INTO auth_clients (client_id, client_url, client_url_callback, client_secret)
+		VALUES 
+			('CORP_ERP', 'https://erp.mydomain.com/', null, null),
+			('CRM', 'https://crm.mydomain.com/', 'https://crm.mydomain.com/authback', 'CRM_SECRET'),
+			('APP1', 'https://app1.mydomain.com/', 'https://app1.mydomain.com/authback', 'APP1_SECRET'),
+			('APP2', 'https://app2.mydomain.com/', 'https://app2.mydomain.com/authback', 'APP2_SECRET');`
+
+	// Ejecuta
+	_, err := db.Exec(insertSQL)
+	if err != nil {
+		return fmt.Errorf("error al insertar auth_clients: %v", err)
+	}
+
+	return nil
+}
+
+func insertPersonAuthClient(db *sql.DB) error {
+
+	// SQL para insertar relaciones entre personas y clientes
+	insertSQL := `
+		INSERT INTO person_auth_client (person_id, auth_client_id, profile)
+		VALUES 
+			(1, 2, '{"role": "admin"}'),
+			(1, 3, '{"role": "user"}'),
+			(2, 2, '{"role": "user"}'),
+			(2, 4, '{"role": "admin"}'),
+			(3, 2, '{"role": "user"}');`
+
+	// Ejecuta
+	_, err := db.Exec(insertSQL)
+	if err != nil {
+		return fmt.Errorf("error al insertar person_auth_client: %v", err)
+	}
+
+	return nil
+}
+
+// initTablePersonAuthClient crea la tabla "person_auth_client" si no existe
 func initTablePersonAuthClient(db *sql.DB) error {
 
 	// SQL para crear la tabla si no existe
@@ -61,7 +139,7 @@ func initTablePersonAuthClient(db *sql.DB) error {
 			profile JSONB,
 			FOREIGN KEY (person_id) REFERENCES persons(id),
 			FOREIGN KEY (auth_client_id) REFERENCES auth_clients(id),
-			UNIQUE (person_id, auth_client_id)			
+			UNIQUE (person_id, auth_client_id)
 		);`
 
 	// Ejecuta la creación de la tabla
