@@ -1,4 +1,4 @@
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{
@@ -9,7 +9,7 @@ curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
            "telefono": "612345678"
          }'
 
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{
@@ -20,7 +20,7 @@ curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
            "telefono": "655987321"
          }'
 
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{
@@ -31,7 +31,7 @@ curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
            "telefono": "699123456"
          }'
 
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{
@@ -42,7 +42,7 @@ curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
            "telefono": "611234567"
          }'
 
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{
@@ -53,7 +53,7 @@ curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
            "telefono": "622345678"
          }'
 
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{
@@ -64,7 +64,7 @@ curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
            "telefono": "633456789"
          }'
 
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{
@@ -75,7 +75,7 @@ curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
            "telefono": "644567890"
          }'
 
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{
@@ -86,7 +86,7 @@ curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
            "telefono": "655678901"
          }'
 
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{
@@ -97,7 +97,7 @@ curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
            "telefono": "666789012"
          }'
 
-curl -k -X POST https://erp.mydomain.com/corp-erp-api/person \
+curl -k -X POST https://erp.mydomain.com/corp-erp-api/person/0 \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer XXXXXXXXXX" \
      -d '{

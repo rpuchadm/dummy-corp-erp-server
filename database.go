@@ -110,6 +110,8 @@ func initTableAuthClients(db *sql.DB) error {
 			id SERIAL PRIMARY KEY,
 			client_id VARCHAR(32) NOT NULL,
 			client_url VARCHAR(255) NOT NULL,
+			client_url_callback VARCHAR(255),
+			client_secret VARCHAR(255),
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);`
 
