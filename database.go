@@ -31,7 +31,13 @@ func initTables(connStr string) http.HandlerFunc {
 			return
 		}
 
-		err = initTableAuthProfiles(db)
+		err = initTableAuthSessions(db)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
+			return
+		}
+
+		err = initTablePersonAuthClient(db)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
 			return
@@ -40,6 +46,31 @@ func initTables(connStr string) http.HandlerFunc {
 		// Responde json indicando que las tablas se crearon o ya existían
 		w.Write([]byte(`{"message": "Tablas creadas o ya existentes"}`))
 	}
+}
+
+// initTablePersons crea la tabla "person_auth_client" si no existe
+func initTablePersonAuthClient(db *sql.DB) error {
+
+	// SQL para crear la tabla si no existe
+	createTableSQL := `
+		CREATE TABLE IF NOT EXISTS person_auth_client (
+			id SERIAL PRIMARY KEY,
+			person_id INT NOT NULL,
+			auth_client_id INT NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			profile JSONB,
+			FOREIGN KEY (person_id) REFERENCES persons(id),
+			FOREIGN KEY (auth_client_id) REFERENCES auth_clients(id),
+			UNIQUE (person_id, auth_client_id)			
+		);`
+
+	// Ejecuta la creación de la tabla
+	_, err := db.Exec(createTableSQL)
+	if err != nil {
+		return fmt.Errorf("error al crear la tabla person_auth_client: %v", err)
+	}
+
+	return nil
 }
 
 // initTablePersons crea la tabla "persons" si no existe
@@ -70,18 +101,18 @@ func initTablePersons(db *sql.DB) error {
 
 // initTableAuthClients crea la tabla "auth_clients" si no existe
 
-// initTableAuthProfilea crea la tabla "auth_profiles" si no existe
+// initTableAuthSessions crea la tabla "auth_sessions" si no existe
 // esta tabla se usa para almacenar los perfiles de autenticación
 // a los que se accederá por token de manera reiterada
 // después de que se acceda una vez por code
-func initTableAuthProfiles(db *sql.DB) error {
+func initTableAuthSessions(db *sql.DB) error {
 
 	// SQL para crear la tabla si no existe
 	// code y token son únicos
 	// json_data es un campo jsonb que puede almacenar cualquier información adicional
 	// created_at es la fecha de creación del registro
 	createTableSQL := `
-		CREATE TABLE IF NOT EXISTS auth_profiles (
+		CREATE TABLE IF NOT EXISTS auth_sessions (
 			id SERIAL PRIMARY KEY,
 			code VARCHAR(32) UNIQUE,
 			token VARCHAR(255) UNIQUE,
@@ -92,11 +123,11 @@ func initTableAuthProfiles(db *sql.DB) error {
 	// Ejecuta la creación de la tabla
 	_, err := db.Exec(createTableSQL)
 	if err != nil {
-		return fmt.Errorf("error al crear la tabla auth_profiles: %v", err)
+		return fmt.Errorf("error al crear la tabla auth_sessions: %v", err)
 	}
 
-	//CREATE UNIQUE INDEX unique_code ON auth_profiles (code) WHERE code IS NOT NULL;
-	//CREATE UNIQUE INDEX unique_token ON auth_profiles (token) WHERE token IS NOT NULL;
+	//CREATE UNIQUE INDEX unique_code ON auth_sessions (code) WHERE code IS NOT NULL;
+	//CREATE UNIQUE INDEX unique_token ON auth_sessions (token) WHERE token IS NOT NULL;
 	return nil
 }
 
@@ -135,6 +166,12 @@ func dropTables(connStr string) http.HandlerFunc {
 		}
 		defer db.Close()
 
+		err = dropTablePersonAuthClient(db)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
+			return
+		}
+
 		err = dropTablePersons(db)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
@@ -147,7 +184,7 @@ func dropTables(connStr string) http.HandlerFunc {
 			return
 		}
 
-		err = dropTableAuthProfiles(db)
+		err = dropTableAuthSessions(db)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
 			return
@@ -156,6 +193,19 @@ func dropTables(connStr string) http.HandlerFunc {
 		// Responde json indicando que las tablas se eliminaron o no existían
 		w.Write([]byte(`{"message": "Tablas eliminadas o no existían"}`))
 	}
+}
+
+func dropTablePersonAuthClient(db *sql.DB) error {
+
+	// SQL para eliminar la tabla "persons"
+	dropTableSQL := `DROP TABLE IF EXISTS person_auth_client;`
+
+	// Ejecuta la eliminación de la tabla
+	_, err := db.Exec(dropTableSQL)
+	if err != nil {
+		return fmt.Errorf("error al eliminar la tabla person_auth_client: %v", err)
+	}
+	return nil
 }
 
 func dropTablePersons(db *sql.DB) error {
@@ -184,15 +234,15 @@ func dropTableAuthClients(db *sql.DB) error {
 	return nil
 }
 
-func dropTableAuthProfiles(db *sql.DB) error {
+func dropTableAuthSessions(db *sql.DB) error {
 
-	// SQL para eliminar la tabla "auth_profiles"
-	dropTableSQL := `DROP TABLE IF EXISTS auth_profiles;`
+	// SQL para eliminar la tabla "auth_sessions"
+	dropTableSQL := `DROP TABLE IF EXISTS auth_sessions;`
 
 	// Ejecuta la eliminación de la tabla
 	_, err := db.Exec(dropTableSQL)
 	if err != nil {
-		return fmt.Errorf("error al eliminar la tabla auth_profiles: %v", err)
+		return fmt.Errorf("error al eliminar la tabla auth_sessions: %v", err)
 	}
 	return nil
 }

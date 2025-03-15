@@ -42,6 +42,7 @@ func main() {
 	http.HandleFunc("/person/", withLogging(corsMiddleware(withAuth(personHandler(connStr), auth_token))))
 	http.HandleFunc("/applications", withLogging(corsMiddleware(withAuth(getAuthClientsHandler(connStr), auth_token))))
 	http.HandleFunc("/application/", withLogging(corsMiddleware(withAuth(authClientHandler(connStr), auth_token))))
+	http.HandleFunc("/personapp/", withLogging(corsMiddleware(withAuth(personAppHandler(connStr), auth_token))))
 
 	// post json con client_id y client_url
 	http.HandleFunc("/authinit", withLogging(corsMiddleware(withAuth(postAuthInitHandler(connStr), auth_token))))
@@ -132,7 +133,7 @@ func postAuthInitHandler(connStr string) http.HandlerFunc {
 
 		// SQL para insertar un mensaje
 		var id int
-		query := `INSERT INTO auth_profiles (code, json_data) VALUES ($1, $2) RETURNING id;`
+		query := `INSERT INTO auth_sessions (code, json_data) VALUES ($1, $2) RETURNING id;`
 		jsonData, err := json.Marshal(data)
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "Error al convertir el json: %v"}`, err), http.StatusInternalServerError)
@@ -172,8 +173,8 @@ func getAuthProfileHandler(connStr string) http.HandlerFunc {
 			return
 		}
 
-		// SQL para obtener json_data de auth_profiles por token
-		query := `SELECT json_data FROM auth_profiles where token = $1;`
+		// SQL para obtener json_data de auth_sessions por token
+		query := `SELECT json_data FROM auth_sessions where token = $1;`
 		rows, err := db.Query(query, authToken)
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "Error al obtener el perfil de autenticación: %v"}`, err), http.StatusInternalServerError)
@@ -200,7 +201,7 @@ func getAuthTokenHandler(connStr string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// a partir del parámetro code se obtiene el id de auth_profile de la URL
-		// se genera un token aleatorio y se almacena en auth_profiles
+		// se genera un token aleatorio y se almacena en auth_sessions
 		// y se pone a null el campo code
 
 		// Abre la conexión a la base de datos
@@ -224,8 +225,8 @@ func getAuthTokenHandler(connStr string) http.HandlerFunc {
 			return
 		}
 
-		// SQL para obtener el token de auth_profiles por code
-		query := `SELECT id FROM auth_profiles WHERE code = $1;`
+		// SQL para obtener el token de auth_sessions por code
+		query := `SELECT id FROM auth_sessions WHERE code = $1;`
 		rows, err := db.Query(query, code)
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "Error al obtener el token de autenticación: %v"}`, err), http.StatusInternalServerError)
@@ -251,8 +252,8 @@ func getAuthTokenHandler(connStr string) http.HandlerFunc {
 		// se genera un token aleatorio
 		token := generaToken()
 
-		// SQL para actualizar el token de auth_profiles por id
-		query = `UPDATE auth_profiles SET token = $1, code = NULL WHERE id = $2;`
+		// SQL para actualizar el token de auth_sessions por id
+		query = `UPDATE auth_sessions SET token = $1, code = NULL WHERE id = $2;`
 		_, err = db.Exec(query, token, id)
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "Error al actualizar el token de autenticación: %v"}`, err), http.StatusInternalServerError)
