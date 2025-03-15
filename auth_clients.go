@@ -120,7 +120,7 @@ func getAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		if iid == 0 {
-			errJsonStatus(w, `IEl campo id es requerido`, http.StatusBadRequest)
+			errJsonStatus(w, `El campo id es requerido`, http.StatusBadRequest)
 			return
 			//} else {
 			//	fmt.Printf("getAuthClientHandler iid:%d\n", iid)
@@ -140,48 +140,17 @@ func getAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 			return
 		}
 
-		// SQL para obtener un cliente
-		query := fmt.Sprintf(`
-			SELECT
-				id, client_id,
-				client_url, client_url_callback,
-				client_secret,
-				created_at
-			FROM auth_clients
-				WHERE id = %d;`, iid)
-		stmt, err := db.Prepare(query)
-		if err != nil {
-			errJsonStatus(w, fmt.Sprintf(`Error al preparar la consulta %v %v`, query, err), http.StatusInternalServerError)
-			return
-		}
-		defer stmt.Close()
-
-		row, err := stmt.Query()
+		application, err := postgres_auth_client_by_id(db, iid)
 		if err != nil {
 			errJsonStatus(w, fmt.Sprintf(`Error al obtener el cliente: %v`, err), http.StatusInternalServerError)
 			return
 		}
-		defer row.Close()
 
-		// Estructura para almacenar el cliente
-		var item AuthClient
-		if row.Next() {
-			err = row.Scan(&item.ID, &item.ClientID,
-				&item.ClientUrl,
-				&item.ClientUrlCallback,
-				&item.ClientSecret,
-				&item.CreatedAt)
-			if err != nil {
-				errJsonStatus(w, fmt.Sprintf(`Error al obtener el cliente: %v`, err), http.StatusInternalServerError)
-				return
-			}
-		} else {
-			errJsonStatus(w, `Cliente no encontrado`, http.StatusNotFound)
-			return
-		}
+		data := make(map[string]any)
+		data["application"] = application
 
 		// Convierte el cliente a formato JSON
-		jsonItem, err := json.Marshal(item)
+		jsonItem, err := json.Marshal(data)
 		if err != nil {
 			errJsonStatus(w, fmt.Sprintf(`Error al convertir el cliente a JSON: %v`, err), http.StatusInternalServerError)
 			return
@@ -282,24 +251,17 @@ func putAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 			return
 		}
 
+		if sent.ID != iid {
+			errJsonStatus(w, `El id del cliente no coincide con el id de la URL`, http.StatusBadRequest)
+			return
+		}
+
 		if sent.ClientUrlCallback != nil {
-			token := tokenCreate(96)
+			token := tokenCreate(64)
 			sent.ClientSecret = &token
 		}
 
-		// SQL para actualizar un cliente
-		query := `
-			UPDATE
-				auth_clients
-			SET
-				client_id = $1, client_url = $2,
-				client_url_callback = $3, client_secret = $4
-			WHERE id = $5;`
-		_, err = db.Exec(
-			query,
-			sent.ClientID, sent.ClientUrl,
-			sent.ClientUrlCallback, sent.ClientSecret,
-			sent.ID)
+		err = postgres_auth_client_update(db, iid, sent)
 		if err != nil {
 			errJsonStatus(w, fmt.Sprintf(`Error al actualizar el cliente: %v`, err), http.StatusInternalServerError)
 			return
@@ -366,6 +328,62 @@ type AuthClientShort struct {
 	ID        int    `json:"id"`
 	ClientID  string `json:"client_id"`
 	ClientUrl string `json:"client_url"`
+}
+
+func postgres_auth_client_update(db *sql.DB, id int, item AuthClient) error {
+
+	query := `
+		UPDATE
+			auth_clients
+		SET
+			client_id = $1, client_url = $2,
+			client_url_callback = $3, client_secret = $4
+		WHERE id = $5;`
+	_, err := db.Exec(
+		query,
+		item.ClientID, item.ClientUrl,
+		item.ClientUrlCallback, item.ClientSecret,
+		id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func postgres_auth_client_by_id(db *sql.DB, id int) (AuthClient, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			id, client_id, client_url, client_url_callback, client_secret, created_at
+		FROM
+			auth_clients
+		WHERE
+			id = %d;`, id)
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return AuthClient{}, err
+	}
+	defer stmt.Close()
+
+	row, err := stmt.Query()
+	if err != nil {
+		return AuthClient{}, err
+	}
+	defer row.Close()
+
+	var item AuthClient
+	if row.Next() {
+		if err := row.Scan(&item.ID, &item.ClientID,
+			&item.ClientUrl, &item.ClientUrlCallback,
+			&item.ClientSecret, &item.CreatedAt); err != nil {
+			return AuthClient{}, err
+		}
+	} else {
+		return AuthClient{}, fmt.Errorf(`cliente no encontrado`)
+	}
+
+	return item, nil
 }
 
 func postgres_auth_client_by_person_id(db *sql.DB, id_person int) ([]AuthClientShort, error) {
