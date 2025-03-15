@@ -267,6 +267,35 @@ func postgres_person_by_id(db *sql.DB, id int) (*PersonData, error) {
 	return person, nil
 }
 
+func postgres_person_by_auth_client_id(db *sql.DB, id_app int) ([]PersonData, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			id, dni, nombre, apellidos, email, telefono, created_at
+		FROM
+			persons
+		WHERE id in (
+			SELECT
+				person_id
+			FROM person_auth_client
+				WHERE auth_client_id = %d
+		);`, id_app)
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []PersonData
+	for rows.Next() {
+		var item PersonData
+		if err := rows.Scan(&item.ID, &item.Dni, &item.Nombre, &item.Apellidos, &item.Email, &item.Telefono, &item.CreatedAt); err != nil {
+			return list, err
+		}
+		list = append(list, item)
+	}
+	return list, nil
+}
+
 type PersonPostSent struct {
 	Dni       string `json:"dni"`
 	Nombre    string `json:"nombre"`

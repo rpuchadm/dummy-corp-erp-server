@@ -146,8 +146,26 @@ func getAuthClientHandler(connStr string, iid int) http.HandlerFunc {
 			return
 		}
 
+		lpersonapp, err := postgres_personapp_by_auth_client_id(db, iid)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al obtener la personaapp: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
+		lper, err := postgres_person_by_auth_client_id(db, iid)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al obtener la persona: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
 		data := make(map[string]any)
 		data["application"] = application
+		if len(lpersonapp) > 0 {
+			data["lpersonapp"] = lpersonapp
+		}
+		if len(lper) > 0 {
+			data["lper"] = lper
+		}
 
 		// Convierte el cliente a formato JSON
 		jsonItem, err := json.Marshal(data)
