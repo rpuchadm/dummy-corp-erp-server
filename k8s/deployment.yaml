@@ -38,9 +38,11 @@ spec:
         - containerPort: 8080
         envFrom:
         - configMapRef:
+            name: auth-config  # Referencia al ConfigMap
+        - configMapRef:
             name: postgres-config  # Referencia al ConfigMap
         - configMapRef:
-            name: auth-config  # Referencia al ConfigMap
+            name: redis-config  # Referencia al ConfigMap            
         env:
         - name: AUTH_TOKEN
           valueFrom:
@@ -52,6 +54,11 @@ spec:
             secretKeyRef:
               name: auth-secret  # Nombre del secret
               key: AUTH_SUPER_SECRET_TOKEN  # Clave del secret         
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret  # Nombre del secret
+              key: REDIS_PASSWORD  # Clave del secret
         resources:
           limits:
             cpu: 500m
