@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dummy-corp-auth-app
+  name: dummy-corp-auth-rust-app
   namespace: dummy-corp-erp-namespace
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: dummy-corp-auth-app
+      app: dummy-corp-auth-rust-app
   template:
     metadata:
       labels:
-        app: dummy-corp-auth-app
+        app: dummy-corp-auth-rust-app
     spec:
       containers:
-      - name: dummy-corp-auth-app
-        image: localhost:32000/dummy-corp-auth-app:latest  # Usar la imagen de tu registro local
+      - name: dummy-corp-auth-rust-app
+        image: localhost:32000/dummy-corp-auth-rust-app:latest  # Usar la imagen de tu registro local
         ports:
         - containerPort: 8080
         envFrom:
@@ -41,4 +41,18 @@ spec:
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 8080  
+            port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-corp-auth-rust-app
+  namespace: dummy-corp-erp-namespace
+spec:
+  selector:
+    app: dummy-corp-auth-rust-app
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
