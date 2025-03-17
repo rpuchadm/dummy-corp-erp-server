@@ -356,17 +356,18 @@ func checkTable(connStr string) http.HandlerFunc {
 }
 
 func databaseConnString() (string, error) {
-	dbUser := os.Getenv("POSTGRES_USER")
-	dbPassword := os.Getenv("POSTGRES_PASSWORD")
+
 	dbName := os.Getenv("POSTGRES_DB")
-	dbService := os.Getenv("POSTGRES_SERVICE")
+	dbPassword := os.Getenv("POSTGRES_PASSWORD")
+	dbHost := os.Getenv("POSTGRES_SERVICE")
+	dbUser := os.Getenv("POSTGRES_USER")
 
 	// Si alguna variable de entorno no está definida, el programa falla
-	if dbUser == "" || dbPassword == "" || dbName == "" {
-		return "", fmt.Errorf("error: Las variables de entorno POSTGRES_USER, POSTGRES_PASSWORD y POSTGRES_DB deben estar definidas")
+	if dbName == "" || dbPassword == "" || dbHost == "" || dbUser == "" {
+		return "", fmt.Errorf("error: Las variables de entorno POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_SERVICE y POSTGRES_DB deben estar definidas")
 	}
 
-	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", dbUser, dbPassword, dbService, dbName), nil
+	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", dbUser, dbPassword, dbHost, dbName), nil
 }
 
 func openDatabaseConnection(connStr string) (*sql.DB, error) {
