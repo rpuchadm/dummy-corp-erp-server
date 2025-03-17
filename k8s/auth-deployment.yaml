@@ -29,6 +29,11 @@ spec:
             secretKeyRef:
               name: auth-secret  # Nombre del secret
               key: AUTH_SUPER_SECRET_TOKEN  # Clave del secret
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret  # Nombre del secret
+              key: REDIS_PASSWORD  # Clave del secret              
         resources:
           limits:
             cpu: 500m
