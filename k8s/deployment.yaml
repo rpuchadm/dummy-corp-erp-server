@@ -30,6 +30,8 @@ spec:
         envFrom:
         - configMapRef:
             name: postgres-config  # Referencia al ConfigMap
+        - configMapRef:
+            name: auth-config  # Referencia al ConfigMap
         env:
         - name: AUTH_TOKEN
           valueFrom:

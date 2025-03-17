@@ -39,6 +39,9 @@ func auth_service_post_session(client_id string, user_id int, expires_in_min int
 		auth_service_url = AUTH_SERVICE_URL
 	}
 
+	fmt.Printf("auth_service_post_session auth_service_url: %s\n", auth_service_url)
+	fmt.Printf("auth_service_post_session auth_service_token: %s\n", super_secret_token)
+
 	// crear la estructura con los datos a enviar
 	data := AuthServicePostSession{
 		ClientId:     client_id,
@@ -52,6 +55,8 @@ func auth_service_post_session(client_id string, user_id int, expires_in_min int
 	if err != nil {
 		return "", fmt.Errorf("error al convertir los datos a JSON: %v", err)
 	}
+
+	fmt.Printf("auth_service_post_session jsonData: %s\n", string(jsonData))
 
 	// enviar los datos al servicio de autenticación
 	req, err := http.NewRequest("POST", auth_service_url, bytes.NewBuffer(jsonData))
