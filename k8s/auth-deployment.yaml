@@ -21,6 +21,8 @@ spec:
         envFrom:
         - configMapRef:
             name: postgres-config  # Referencia al ConfigMap
+        - configMapRef:
+            name: redis-config  # Referencia al ConfigMap
         env:
         - name: AUTH_SUPER_SECRET_TOKEN
           valueFrom:
