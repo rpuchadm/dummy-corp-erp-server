@@ -13,7 +13,7 @@ spec:
     - host: erp.mydomain.com
       http:
         paths:
-          - path: /corp-auth-api/?(.*)
+          - path: /oauth/?(.*)
             pathType: Prefix
             backend:
               service:
