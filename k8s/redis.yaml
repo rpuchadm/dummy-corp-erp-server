@@ -23,7 +23,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: redis-secret  # Nombre del Secret
-              key: redis-password # Clave en el Secret
+              key: REDIS_PASSWORD # Clave en el Secret
         args: ["--requirepass", "$(REDIS_PASSWORD)"]  # Usar la contraseña en Redis        
         resources:
           limits:
