@@ -24,9 +24,6 @@ type AuthServicePostSessionResponse struct {
 	Attributes any    `json:"attributes"`
 }
 
-// constante con la url del servicio de autenticación
-const AUTH_SERVICE_URL = "http://localhost:8080"
-
 func auth_service_post_session(client_id string, user_id int, expires_in_min int, attributes map[string]any) (string, error) {
 
 	super_secret_token := os.Getenv("AUTH_SUPER_SECRET_TOKEN")
@@ -36,7 +33,7 @@ func auth_service_post_session(client_id string, user_id int, expires_in_min int
 
 	auth_service_url := os.Getenv("AUTH_SERVICE_URL")
 	if auth_service_url == "" {
-		auth_service_url = AUTH_SERVICE_URL
+		return "", fmt.Errorf("AUTH_SERVICE_URL not set")
 	}
 
 	fmt.Printf("auth_service_post_session auth_service_url: %s\n", auth_service_url)

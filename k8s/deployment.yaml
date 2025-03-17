@@ -5,7 +5,7 @@ metadata:
   name: auth-config
   namespace: dummy-corp-erp-namespace
 data:
-  AUTH_SERVICE_URL: http://dummy-corp-auth-app-service:8080
+  AUTH_SERVICE_URL: http://dummy-corp-auth-rust-app:8080
 ---
 apiVersion: apps/v1
 kind: Deployment
