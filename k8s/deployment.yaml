@@ -10,7 +10,7 @@ data:
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: auth-config
+  name: redis-config
   namespace: dummy-corp-erp-namespace
 data:
   REDIS_SERVICE: redis
