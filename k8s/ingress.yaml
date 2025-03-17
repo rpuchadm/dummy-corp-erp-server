@@ -13,6 +13,13 @@ spec:
     - host: erp.mydomain.com
       http:
         paths:
+          - path: /corp-auth-api/?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: dummy-corp-auth-rust-app-service
+                port:
+                  number: 8080
           - path: /corp-erp-api/?(.*)
             pathType: Prefix
             backend:
