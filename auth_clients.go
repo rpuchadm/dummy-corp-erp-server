@@ -80,6 +80,127 @@ func getAuthClientsHandler(connStr string) http.HandlerFunc {
 	}
 }
 
+func personAppSessionHandler(connStr string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Verifica que el método sea GET
+		if r.Method != http.MethodPost {
+			errJsonStatus(w, `Método no permitido`, http.StatusMethodNotAllowed)
+			return
+		}
+
+		/*		// Obtiene el ID de la persona
+				path := strings.TrimPrefix(r.URL.Path, "/person/")
+				id := strings.Split(path, "/")[0]*/
+
+		// /personapp-session/1/2
+		path := strings.TrimPrefix(r.URL.Path, "/personapp-session/")
+		split := strings.Split(path, "/")
+		if len(split) != 2 {
+			errJsonStatus(w, fmt.Sprintf(`Se esperan dos parámetros en la URL; len(split):%d path:%v split:%v`, len(split), path, split), http.StatusBadRequest)
+			return
+		}
+		// Obtiene el ID de la persona
+		idPer := split[0]
+		// Obtiene el ID de la aplicación
+		idApp := split[1]
+
+		// parsear el idPer a int
+		iidPer, err := strconv.Atoi(idPer)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al parsear el idPer: %v`, err), http.StatusBadRequest)
+			return
+		}
+
+		// parsear el id a int
+		iidApp, err := strconv.Atoi(idApp)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al parsear el idApp: %v`, err), http.StatusBadRequest)
+			return
+		}
+
+		if iidPer == 0 {
+			errJsonStatus(w, `El campo idPer es requerido`, http.StatusBadRequest)
+			return
+		}
+
+		if iidApp == 0 {
+			errJsonStatus(w, `El campo idApp es requerido`, http.StatusBadRequest)
+			return
+		}
+
+		// Abre la conexión a la base de datos
+		db, err := openDatabaseConnection(connStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		person, err := postgres_person_by_id(db, iidPer)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al obtener la persona: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
+		if person == nil {
+			errJsonStatus(w, fmt.Sprintf(`La persona con id %d no existe`, iidPer), http.StatusNotFound)
+			return
+		}
+
+		app, err := postgres_auth_client_by_id(db, iidApp)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al obtener la app: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
+		if app == nil {
+			errJsonStatus(w, fmt.Sprintf(`La app con id %d no existe`, iidApp), http.StatusNotFound)
+			return
+		}
+
+		personApp, err := postgres_personapp_by_person_id_auth_client_id(db, iidPer, iidApp)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al obtener la personapp: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
+		profile_str := ""
+		if personApp != nil && personApp.Profile != nil {
+			profile_str = *personApp.Profile
+		}
+		// intenta parsear profile como json sin structura concreta
+		profile := make(map[string]any)
+		err = json.Unmarshal([]byte(profile_str), &profile)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al parsear el profile: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
+		expires_in_min := 60
+
+		code, err := auth_service_post_session(app.ClientID, iidPer, expires_in_min, profile)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al crear la sesión: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
+		data := make(map[string]any)
+		data["code"] = code
+		data["expires_in_min"] = expires_in_min
+
+		// Convierte data a formato JSON
+		jsonList, err := json.Marshal(data)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al convertir los clientes a JSON: %v`, err), http.StatusInternalServerError)
+			return
+		}
+
+		// Responde con los clientes en formato JSON
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonList)
+	}
+}
+
 type AuthClientPostSent struct {
 	ClientID          string  `json:"client_id"`
 	ClientUrl         string  `json:"client_url"`
@@ -369,7 +490,7 @@ func postgres_auth_client_update(db *sql.DB, id int, item AuthClient) error {
 	return nil
 }
 
-func postgres_auth_client_by_id(db *sql.DB, id int) (AuthClient, error) {
+func postgres_auth_client_by_id(db *sql.DB, id int) (*AuthClient, error) {
 	query := fmt.Sprintf(`
 		SELECT
 			id, client_id, client_url, client_url_callback, client_secret, created_at
@@ -380,13 +501,13 @@ func postgres_auth_client_by_id(db *sql.DB, id int) (AuthClient, error) {
 
 	stmt, err := db.Prepare(query)
 	if err != nil {
-		return AuthClient{}, err
+		return nil, err
 	}
 	defer stmt.Close()
 
 	row, err := stmt.Query()
 	if err != nil {
-		return AuthClient{}, err
+		return nil, err
 	}
 	defer row.Close()
 
@@ -395,13 +516,13 @@ func postgres_auth_client_by_id(db *sql.DB, id int) (AuthClient, error) {
 		if err := row.Scan(&item.ID, &item.ClientID,
 			&item.ClientUrl, &item.ClientUrlCallback,
 			&item.ClientSecret, &item.CreatedAt); err != nil {
-			return AuthClient{}, err
+			return nil, err
 		}
 	} else {
-		return AuthClient{}, fmt.Errorf(`cliente no encontrado`)
+		return nil, fmt.Errorf(`cliente no encontrado`)
 	}
 
-	return item, nil
+	return &item, nil
 }
 
 func postgres_auth_client_by_person_id(db *sql.DB, id_person int) ([]AuthClientShort, error) {

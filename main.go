@@ -43,6 +43,7 @@ func main() {
 	http.HandleFunc("/applications", withLogging(corsMiddleware(withAuth(getAuthClientsHandler(connStr), auth_token))))
 	http.HandleFunc("/application/", withLogging(corsMiddleware(withAuth(authClientHandler(connStr), auth_token))))
 	http.HandleFunc("/personapp/", withLogging(corsMiddleware(withAuth(personAppHandler(connStr), auth_token))))
+	http.HandleFunc("/personapp-session/", withLogging(corsMiddleware(withAuth(personAppSessionHandler(connStr), auth_token))))
 
 	// post json con client_id y client_url
 	http.HandleFunc("/authinit", withLogging(corsMiddleware(withAuth(postAuthInitHandler(connStr), auth_token))))

@@ -32,6 +32,101 @@ type PersonApp struct {
 	Profile      *string   `json:"profile"`
 }
 
+func personAppHandlerSession(connStr string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// /personapp/1/2
+		path := strings.TrimPrefix(r.URL.Path, "/personapp/")
+		split := strings.Split(path, "/")
+		if len(split) != 2 {
+			errJsonStatus(w, `Se esperan dos parámetros en la URL`, http.StatusBadRequest)
+			return
+		}
+		// Obtiene el ID de la persona
+		idPer := split[0]
+		// Obtiene el ID de la aplicación
+		idApp := split[1]
+
+		// parsear el idPer a int
+		iidPer, err := strconv.Atoi(idPer)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al parsear el idPer: %v`, err), http.StatusBadRequest)
+			return
+		}
+
+		// parsear el id a int
+		iidApp, err := strconv.Atoi(idApp)
+		if err != nil {
+			errJsonStatus(w, fmt.Sprintf(`Error al parsear el idApp: %v`, err), http.StatusBadRequest)
+			return
+		}
+
+		if iidPer == 0 {
+			errJsonStatus(w, `El campo idPer es requerido`, http.StatusBadRequest)
+			return
+		}
+
+		if iidApp == 0 {
+			errJsonStatus(w, `El campo idApp es requerido`, http.StatusBadRequest)
+			return
+		}
+
+		// Abre la conexión a la base de datos
+		db, err := openDatabaseConnection(connStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		if r.Method == http.MethodPost {
+
+			if iidPer == 0 {
+				errJsonStatus(w, `El campo idPer es requerido`, http.StatusBadRequest)
+				return
+			}
+
+			if iidApp == 0 {
+				errJsonStatus(w, `El campo idApp es requerido`, http.StatusBadRequest)
+				return
+			}
+
+			person, err := postgres_person_by_id(db, iidPer)
+			if err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al obtener la persona: %v`, err), http.StatusInternalServerError)
+				return
+			}
+
+			if person == nil {
+				errJsonStatus(w, fmt.Sprintf(`La persona con id %d no existe`, iidPer), http.StatusNotFound)
+				return
+			}
+
+			app, err := postgres_auth_client_by_id(db, iidApp)
+			if err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al obtener la app: %v`, err), http.StatusInternalServerError)
+				return
+			}
+
+			if app == nil {
+				errJsonStatus(w, fmt.Sprintf(`La app con id %d no existe`, iidApp), http.StatusNotFound)
+				return
+			}
+
+			// TODO iniciar una sesión con la persona y la app
+			// y el profile de la persona en la app
+			// para esto se debe crear un registro en la tabla person_auth_client
+			// con los campos person_id, auth_client_id y profile
+
+			fmt.Printf("Iniciar sesión con la persona %d y la app %d\n", iidPer, iidApp)
+			fmt.Printf("Profile: %v\n", r.FormValue("profile"))
+			fmt.Print("personAppHandlerSession CUIDADO NO IMPLEMENTADO AÚN\n")
+
+			return
+
+		}
+	}
+}
+
 func personAppHandler(connStr string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -90,15 +185,14 @@ func personAppHandler(connStr string) http.HandlerFunc {
 				return
 			}
 
-			personApp, err := postgres_personapp_by_person_id_auth_client_id(db, iidPer, iidApp)
-			if err != nil {
-				errJsonStatus(w, fmt.Sprintf(`Error al obtener la personapp: %v`, err), http.StatusInternalServerError)
-				return
-			}
-
 			person, err := postgres_person_by_id(db, iidPer)
 			if err != nil {
 				errJsonStatus(w, fmt.Sprintf(`Error al obtener la persona: %v`, err), http.StatusInternalServerError)
+				return
+			}
+
+			if person == nil {
+				errJsonStatus(w, fmt.Sprintf(`La persona con id %d no existe`, iidPer), http.StatusNotFound)
 				return
 			}
 
@@ -108,10 +202,24 @@ func personAppHandler(connStr string) http.HandlerFunc {
 				return
 			}
 
+			if app == nil {
+				errJsonStatus(w, fmt.Sprintf(`La app con id %d no existe`, iidApp), http.StatusNotFound)
+				return
+			}
+
 			data := make(map[string]any)
-			data["personapp"] = personApp
 			data["person"] = person
 			data["app"] = app
+
+			personApp, err := postgres_personapp_by_person_id_auth_client_id(db, iidPer, iidApp)
+			if err != nil {
+				errJsonStatus(w, fmt.Sprintf(`Error al obtener la personapp: %v`, err), http.StatusInternalServerError)
+				return
+			}
+
+			if personApp != nil {
+				data["personapp"] = personApp
+			}
 
 			// Convierte la personapp a formato JSON
 			jsonPersonApp, err := json.Marshal(data)
