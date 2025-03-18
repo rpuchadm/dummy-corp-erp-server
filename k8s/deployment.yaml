@@ -6,6 +6,7 @@ metadata:
   namespace: dummy-corp-erp-namespace
 data:
   AUTH_SERVICE_URL: http://dummy-corp-auth-rust-app:8080/session
+  AUTH_REDIS_TTL: "600"  
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -15,7 +16,6 @@ metadata:
 data:
   REDIS_SERVICE: redis
   REDIS_PORT: "6379"
-  AUTH_REDIS_TTL: "600"
 ---
 apiVersion: apps/v1
 kind: Deployment
