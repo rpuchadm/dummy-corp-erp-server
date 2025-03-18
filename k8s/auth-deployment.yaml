@@ -33,7 +33,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: redis-secret  # Nombre del secret
-              key: REDIS_PASSWORD  # Clave del secret              
+              key: REDIS_PASSWORD  # Clave del secret
         resources:
           limits:
             cpu: 500m
