@@ -178,7 +178,7 @@ func personAppSessionHandler(connStr string) http.HandlerFunc {
 
 		expires_in_min := 60
 
-		code, err := auth_service_post_session(app.ClientID, iidPer, expires_in_min, profile)
+		code, err := auth_service_post_session(app.ClientID, iidPer, app.ClientUrl, expires_in_min, profile)
 		if err != nil {
 			errJsonStatus(w, fmt.Sprintf(`Error al crear la sesión: %v`, err), http.StatusInternalServerError)
 			return

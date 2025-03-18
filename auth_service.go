@@ -12,19 +12,21 @@ import (
 type AuthServicePostSession struct {
 	ClientId     string                 `json:"client_id"`
 	UserId       int                    `json:"user_id"`
+	RedirectUri  string                 `json:"redirect_uri"`
 	ExpiresInMin int                    `json:"expires_in_min"`
 	Attributes   map[string]interface{} `json:"attributes"`
 }
 
 type AuthServicePostSessionResponse struct {
-	ClientId   string `json:"client_id"`
-	Code       string `json:"code"`
-	UserId     int    `json:"user_id"`
-	ExpiresAt  any    `json:"expires_at"`
-	Attributes any    `json:"attributes"`
+	ClientId    string `json:"client_id"`
+	Code        string `json:"code"`
+	UserId      int    `json:"user_id"`
+	RedirectUri string `json:"redirect_uri"`
+	ExpiresAt   any    `json:"expires_at"`
+	Attributes  any    `json:"attributes"`
 }
 
-func auth_service_post_session(client_id string, user_id int, expires_in_min int, attributes map[string]any) (string, error) {
+func auth_service_post_session(client_id string, user_id int, redirect_uri string, expires_in_min int, attributes map[string]any) (string, error) {
 
 	super_secret_token := os.Getenv("AUTH_SUPER_SECRET_TOKEN")
 	if super_secret_token == "" {
@@ -43,6 +45,7 @@ func auth_service_post_session(client_id string, user_id int, expires_in_min int
 	data := AuthServicePostSession{
 		ClientId:     client_id,
 		UserId:       user_id,
+		RedirectUri:  redirect_uri,
 		ExpiresInMin: expires_in_min,
 		Attributes:   attributes,
 	}
