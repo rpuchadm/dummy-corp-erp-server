@@ -38,24 +38,10 @@ func getPersonsHandler(connStr string) http.HandlerFunc {
 			return
 		}
 
-		// SQL para obtener todas las personas
-		query := `SELECT id, dni, nombre, apellidos, email, telefono, created_at FROM persons;`
-		rows, err := db.Query(query)
+		list, err := postgres_persons_all(db)
 		if err != nil {
 			errJsonStatus(w, fmt.Sprintf(`Error al obtener las personas: %v`, err), http.StatusInternalServerError)
 			return
-		}
-		defer rows.Close()
-
-		// Estructura para almacenar las personas
-		var list []PersonData
-		for rows.Next() {
-			var item PersonData
-			if err := rows.Scan(&item.ID, &item.Dni, &item.Nombre, &item.Apellidos, &item.Email, &item.Telefono, &item.CreatedAt); err != nil {
-				errJsonStatus(w, fmt.Sprintf(`Error al escanear la persona: %v`, err), http.StatusInternalServerError)
-				return
-			}
-			list = append(list, item)
 		}
 
 		// Convierte las personas a formato JSON
@@ -289,6 +275,36 @@ func postgres_person_by_auth_client_id(db *sql.DB, id_app int) ([]PersonData, er
 	for rows.Next() {
 		var item PersonData
 		if err := rows.Scan(&item.ID, &item.Dni, &item.Nombre, &item.Apellidos, &item.Email, &item.Telefono, &item.CreatedAt); err != nil {
+			return list, err
+		}
+		list = append(list, item)
+	}
+	return list, nil
+}
+
+func postgres_persons_all(db *sql.DB) ([]PersonData, error) {
+	query := `
+		SELECT
+			id, dni,
+			nombre, apellidos,
+			email, telefono,
+			created_at
+		FROM persons
+			order by apellidos, nombre
+		;`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []PersonData
+	for rows.Next() {
+		var item PersonData
+		if err := rows.Scan(&item.ID, &item.Dni,
+			&item.Nombre, &item.Apellidos,
+			&item.Email, &item.Telefono,
+			&item.CreatedAt); err != nil {
 			return list, err
 		}
 		list = append(list, item)

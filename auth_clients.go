@@ -525,6 +525,41 @@ func postgres_auth_client_by_id(db *sql.DB, id int) (*AuthClient, error) {
 	return &item, nil
 }
 
+func postgres_auth_client_by_client_id(db *sql.DB, client_id string) (*AuthClient, error) {
+	query := `
+		SELECT
+			id, client_id, client_url, client_url_callback, client_secret, created_at
+		FROM
+			auth_clients
+		WHERE
+			client_id = $1;`
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	row, err := stmt.Query(client_id)
+	if err != nil {
+		return nil, err
+	}
+	defer row.Close()
+
+	var item AuthClient
+	if row.Next() {
+		if err := row.Scan(&item.ID, &item.ClientID,
+			&item.ClientUrl, &item.ClientUrlCallback,
+			&item.ClientSecret, &item.CreatedAt); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf(`cliente no encontrado`)
+	}
+
+	return &item, nil
+}
+
 func postgres_auth_client_by_person_id(db *sql.DB, id_person int) ([]AuthClientShort, error) {
 	query := fmt.Sprintf(`
 		SELECT

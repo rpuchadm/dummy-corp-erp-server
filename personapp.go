@@ -342,7 +342,8 @@ func postgres_personapp_by_auth_client_id(db *sql.DB, id_app int) ([]PersonApp, 
 		FROM
 			person_auth_client
 		WHERE
-			auth_client_id = %d;`, id_app)
+			auth_client_id = %d;
+		`, id_app)
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		return nil, err
