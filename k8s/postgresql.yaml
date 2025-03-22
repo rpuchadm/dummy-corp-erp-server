@@ -7,7 +7,7 @@ metadata:
 data:
   POSTGRES_DB: mydatabase
   POSTGRES_PASSWORD: password  # este campo debería estar en un secret
-  POSTGRES_SERVICE: postgresql # este campo debería estar en un secret
+  POSTGRES_SERVICE: postgresql
   POSTGRES_USER: user
 ---
 apiVersion: v1
