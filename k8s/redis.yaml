@@ -45,3 +45,13 @@ spec:
     - protocol: TCP
       port: 6379
       targetPort: 6379
+---
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: redis-config
+  namespace: dummy-corp-erp-namespace
+data:
+  REDIS_PORT: '6379'
+  REDIS_SERVICE: redis
