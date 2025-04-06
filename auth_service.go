@@ -28,9 +28,9 @@ type AuthServicePostSessionResponse struct {
 
 func auth_service_post_session(client_id string, user_id int, redirect_uri string, expires_in_min int, attributes map[string]any) (string, error) {
 
-	super_secret_token := os.Getenv("AUTH_TOKEN")
-	if super_secret_token == "" {
-		return "", fmt.Errorf("AUTH_TOKEN not set")
+	auth_super_secret_token := os.Getenv("AUTH_SUPER_SECRET_TOKEN")
+	if auth_super_secret_token == "" {
+		return "", fmt.Errorf("AUTH_SUPER_SECRET_TOKEN not set")
 	}
 
 	auth_service_url := os.Getenv("AUTH_SERVICE_URL")
@@ -39,7 +39,7 @@ func auth_service_post_session(client_id string, user_id int, redirect_uri strin
 	}
 
 	fmt.Printf("auth_service_post_session auth_service_url: %s\n", auth_service_url)
-	fmt.Printf("auth_service_post_session auth_service_token: %s\n", super_secret_token)
+	fmt.Printf("auth_service_post_session auth_service_token: %s\n", auth_super_secret_token)
 
 	// crear la estructura con los datos a enviar
 	data := AuthServicePostSession{
@@ -64,7 +64,7 @@ func auth_service_post_session(client_id string, user_id int, redirect_uri strin
 		return "", fmt.Errorf("error al crear la solicitud HTTP: %v", err)
 	}
 	// Agregar el token de autenticación en el header
-	req.Header.Set("Authorization", "Bearer "+super_secret_token)
+	req.Header.Set("Authorization", "Bearer "+auth_super_secret_token)
 	req.Header.Set("Content-Type", "application/json")
 
 	// Realizar la solicitud HTTP
