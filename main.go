@@ -22,8 +22,8 @@ func main() {
 	}
 
 	// carga el token de autenticación desde una variable de entorno
-	auth_super_secret_token := os.Getenv("AUTH_TOKEN")
-	if auth_super_secret_token == "" {
+	auth_token := os.Getenv("AUTH_TOKEN")
+	if auth_token == "" {
 		log.Fatal("error: La variable de entorno AUTH_TOKEN debe estar definida")
 		//} else {
 		//	fmt.Println("Token de autenticación:", token)
@@ -35,14 +35,14 @@ func main() {
 	})
 
 	// Manejadores de las rutas
-	http.HandleFunc("/auth", withLogging(corsMiddleware(withAuth(getAuthHandler, auth_super_secret_token))))
-	http.HandleFunc("/persons", withLogging(corsMiddleware(withAuth(getPersonsHandler(connStr), auth_super_secret_token))))
-	http.HandleFunc("/person/", withLogging(corsMiddleware(withAuth(personHandler(connStr), auth_super_secret_token))))
-	http.HandleFunc("/applications", withLogging(corsMiddleware(withAuth(getAuthClientsHandler(connStr), auth_super_secret_token))))
-	http.HandleFunc("/application/", withLogging(corsMiddleware(withAuth(authClientHandler(connStr), auth_super_secret_token))))
-	http.HandleFunc("/personapp/", withLogging(corsMiddleware(withAuth(personAppHandler(connStr), auth_super_secret_token))))
-	http.HandleFunc("/personapp-session/", withLogging(corsMiddleware(withAuth(personAppSessionHandler(connStr), auth_super_secret_token))))
-	http.HandleFunc("/authini/", withLogging(corsMiddleware(withAuth(authIniHandler(connStr), auth_super_secret_token))))
+	http.HandleFunc("/auth", withLogging(corsMiddleware(withAuth(getAuthHandler, auth_token))))
+	http.HandleFunc("/persons", withLogging(corsMiddleware(withAuth(getPersonsHandler(connStr), auth_token))))
+	http.HandleFunc("/person/", withLogging(corsMiddleware(withAuth(personHandler(connStr), auth_token))))
+	http.HandleFunc("/applications", withLogging(corsMiddleware(withAuth(getAuthClientsHandler(connStr), auth_token))))
+	http.HandleFunc("/application/", withLogging(corsMiddleware(withAuth(authClientHandler(connStr), auth_token))))
+	http.HandleFunc("/personapp/", withLogging(corsMiddleware(withAuth(personAppHandler(connStr), auth_token))))
+	http.HandleFunc("/personapp-session/", withLogging(corsMiddleware(withAuth(personAppSessionHandler(connStr), auth_token))))
+	http.HandleFunc("/authini/", withLogging(corsMiddleware(withAuth(authIniHandler(connStr), auth_token))))
 
 	http.HandleFunc("/init", withLogging(initTables(connStr)))
 	http.HandleFunc("/clean", withLogging(dropTables(connStr)))
@@ -65,10 +65,10 @@ func getAuthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // middleware para autenticación
-func withAuth(handler http.HandlerFunc, auth_super_secret_token string) http.HandlerFunc {
+func withAuth(handler http.HandlerFunc, auth_token string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Verificar si el token de autenticación es correcto
-		if r.Header.Get("Authorization") != "Bearer "+auth_super_secret_token {
+		if r.Header.Get("Authorization") != "Bearer "+auth_token {
 			//fmt.Println("withAuth No autorizado")
 			http.Error(w, `{"error": "No autorizado"}`, http.StatusUnauthorized)
 			return
