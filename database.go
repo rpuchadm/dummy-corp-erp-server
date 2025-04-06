@@ -31,12 +31,6 @@ func initTables(connStr string) http.HandlerFunc {
 			return
 		}
 
-		err = initTableAuthSessions(db)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
-			return
-		}
-
 		err = initTablePersonAuthClient(db)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
@@ -174,38 +168,6 @@ func initTablePersons(db *sql.DB) error {
 		return fmt.Errorf("error al crear la tabla persons: %v", err)
 	}
 
-	return nil
-}
-
-// initTableAuthClients crea la tabla "auth_clients" si no existe
-
-// initTableAuthSessions crea la tabla "auth_sessions" si no existe
-// esta tabla se usa para almacenar los perfiles de autenticación
-// a los que se accederá por token de manera reiterada
-// después de que se acceda una vez por code
-func initTableAuthSessions(db *sql.DB) error {
-
-	// SQL para crear la tabla si no existe
-	// code y token son únicos
-	// json_data es un campo jsonb que puede almacenar cualquier información adicional
-	// created_at es la fecha de creación del registro
-	createTableSQL := `
-		CREATE TABLE IF NOT EXISTS auth_sessions (
-			id SERIAL PRIMARY KEY,
-			code VARCHAR(32) UNIQUE,
-			token VARCHAR(255) UNIQUE,
-			json_data JSONB,
-			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-		);`
-
-	// Ejecuta la creación de la tabla
-	_, err := db.Exec(createTableSQL)
-	if err != nil {
-		return fmt.Errorf("error al crear la tabla auth_sessions: %v", err)
-	}
-
-	//CREATE UNIQUE INDEX unique_code ON auth_sessions (code) WHERE code IS NOT NULL;
-	//CREATE UNIQUE INDEX unique_token ON auth_sessions (token) WHERE token IS NOT NULL;
 	return nil
 }
 
