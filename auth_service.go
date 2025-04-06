@@ -28,9 +28,9 @@ type AuthServicePostSessionResponse struct {
 
 func auth_service_post_session(client_id string, user_id int, redirect_uri string, expires_in_min int, attributes map[string]any) (string, error) {
 
-	super_secret_token := os.Getenv("AUTH_SUPER_SECRET_TOKEN")
+	super_secret_token := os.Getenv("AUTH_TOKEN")
 	if super_secret_token == "" {
-		return "", fmt.Errorf("AUTH_SUPER_SECRET_TOKEN not set")
+		return "", fmt.Errorf("AUTH_TOKEN not set")
 	}
 
 	auth_service_url := os.Getenv("AUTH_SERVICE_URL")
