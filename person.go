@@ -57,6 +57,14 @@ func getPersonsHandler(connStr string) http.HandlerFunc {
 	}
 }
 
+type PersonPostData struct {
+	Dni       string `json:"dni"`
+	Nombre    string `json:"nombre"`
+	Apellidos string `json:"apellidos"`
+	Email     string `json:"email"`
+	Telefono  string `json:"telefono"`
+}
+
 func personHandler(connStr string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -134,7 +142,7 @@ func personHandler(connStr string) http.HandlerFunc {
 			}
 
 			// Parsea el cuerpo de la solicitud en json
-			var person PersonPostSent
+			var person PersonPostData
 			if err := json.NewDecoder(r.Body).Decode(&person); err != nil {
 				errJsonStatus(w, fmt.Sprintf(`Error al parsear el cuerpo de la solicitud: %v`, err), http.StatusBadRequest)
 				return
@@ -310,12 +318,4 @@ func postgres_persons_all(db *sql.DB) ([]PersonData, error) {
 		list = append(list, item)
 	}
 	return list, nil
-}
-
-type PersonPostSent struct {
-	Dni       string `json:"dni"`
-	Nombre    string `json:"nombre"`
-	Apellidos string `json:"apellidos"`
-	Email     string `json:"email"`
-	Telefono  string `json:"telefono"`
 }
