@@ -79,25 +79,6 @@ func withAuth(handler http.HandlerFunc, auth_token string) http.HandlerFunc {
 	}
 }
 
-func authHeader(r *http.Request) string {
-	authorization := r.Header.Get("Authorization")
-	if authorization != "" {
-		// quitamos el prefijo Bearer
-		return authorization[7:]
-	}
-	return ""
-}
-
-/*
-type AuthProfileData struct {
-	ID        int       `json:"id"`
-	Code      string    `json:"code"`
-	Token     string    `json:"token"`
-	JsonData  string    `json:"json_data"`
-	CreatedAt time.Time `json:"created_at"`
-}
-*/
-
 // Middleware para registrar solicitudes HTTP
 func withLogging(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
