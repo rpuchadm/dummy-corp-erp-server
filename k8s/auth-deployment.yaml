@@ -4,6 +4,7 @@ metadata:
   name: dummy-corp-auth-rust-app
   namespace: dummy-corp-erp-namespace
 spec:
+  revisionHistoryLimit: 2
   replicas: 1
   selector:
     matchLabels:
