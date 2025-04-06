@@ -1,4 +1,6 @@
+# microk8s kubectl create namespace dummy-corp-erp-namespace
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dummy-corp-erp-namespace
+
