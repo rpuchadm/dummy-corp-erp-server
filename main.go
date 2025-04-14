@@ -57,7 +57,11 @@ func main() {
 	fmt.Println("Servidor iniciado en :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
-	go initTables(connStr)
+	// Inicializa las tablas de la base de datos
+	// TODO: comentar cuando no se necesite
+	go func() {
+		initTables(connStr)
+	}()
 }
 
 func getAuthHandler(w http.ResponseWriter, r *http.Request) {
