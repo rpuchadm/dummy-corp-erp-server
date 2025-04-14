@@ -44,7 +44,7 @@ func main() {
 	http.HandleFunc("/personapp-session/", withLogging(corsMiddleware(withAuth(personAppSessionHandler(connStr), auth_token))))
 	http.HandleFunc("/authini/", withLogging(corsMiddleware(withAuth(authIniHandler(connStr), auth_token))))
 
-	http.HandleFunc("/init", withLogging(initTables(connStr)))
+	http.HandleFunc("/init", withLogging(initTablesHandler(connStr)))
 	http.HandleFunc("/clean", withLogging(dropTables(connStr)))
 	http.HandleFunc("/status", withLogging(checkTable(connStr)))
 	//manejador por defecto 404
@@ -56,6 +56,8 @@ func main() {
 	// Inicia el servidor en el puerto 8080
 	fmt.Println("Servidor iniciado en :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+
+	go initTables(connStr)
 }
 
 func getAuthHandler(w http.ResponseWriter, r *http.Request) {

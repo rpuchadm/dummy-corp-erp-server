@@ -8,48 +8,52 @@ import (
 	"os"
 )
 
-func initTables(connStr string) http.HandlerFunc {
+func initTables(connStr string) error {
+	// Abre la conexión a la base de datos
+	var err error
+	db, err := openDatabaseConnection(connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	err = initTablePersons(db)
+	if err != nil {
+		return err
+	}
+	err = initTableAuthClients(db)
+	if err != nil {
+		return err
+	}
+
+	err = initTablePersonAuthClient(db)
+	if err != nil {
+		return err
+	}
+
+	err = insertPersons(db)
+	if err != nil {
+		return err
+	}
+
+	err = insertAuthClients(db)
+	if err != nil {
+		return err
+	}
+
+	err = insertPersonAuthClient(db)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func initTablesHandler(connStr string) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Abre la conexión a la base de datos
-		var err error
-		db, err := openDatabaseConnection(connStr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer db.Close()
-
-		err = initTablePersons(db)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
-			return
-		}
-		err = initTableAuthClients(db)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
-			return
-		}
-
-		err = initTablePersonAuthClient(db)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
-			return
-		}
-
-		err = insertPersons(db)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
-			return
-		}
-
-		err = insertAuthClients(db)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
-			return
-		}
-
-		err = insertPersonAuthClient(db)
+		err := initTables(connStr)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("{\"error\",\"%v\"}", err), http.StatusInternalServerError)
 			return
@@ -183,7 +187,8 @@ func initTableAuthClients(db *sql.DB) error {
 			client_url VARCHAR(255) NOT NULL,
 			client_url_callback VARCHAR(255),
 			client_secret VARCHAR(255),
-			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE (client_id)
 		);`
 
 	// Ejecuta la creación de la tabla
