@@ -1,0 +1,6 @@
+curl -k -X GET \
+  https://erp.mydomain.com/corp-erp-api/init
+  
+curl -k -X GET \
+  https://erp.mydomain.com/corp-erp-api/clean
+
