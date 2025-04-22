@@ -91,6 +91,7 @@ func insertAuthClients(db *sql.DB) error {
 		VALUES 
 			('CORP_ERP', 'https://erp.mydomain.com/', null, null),
 			('CRM', 'https://crm.mydomain.com/', 'https://crm.mydomain.com/authback', 'CRM_SECRET'),
+			('ISSUES', 'https://issues.mydomain.com/', 'https://issues.mydomain.com/authback', 'ISSUES_SECRET'),
 			('APP1', 'https://app1.mydomain.com/', 'https://app1.mydomain.com/authback', 'APP1_SECRET'),
 			('APP2', 'https://app2.mydomain.com/', 'https://app2.mydomain.com/authback', 'APP2_SECRET');`
 
