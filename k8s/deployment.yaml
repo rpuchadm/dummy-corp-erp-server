@@ -7,6 +7,7 @@ metadata:
 data:
   AUTH_SERVICE_URL: http://dummy-corp-auth-rust-app:8080/session
   AUTH_REDIS_TTL: "600"  
+  AUTH_PROFILE_URL: http://dummy-corp-auth-rust-app:8080/profile
 ---
 kind: ConfigMap
 apiVersion: v1
