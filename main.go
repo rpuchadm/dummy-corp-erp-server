@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -73,11 +74,17 @@ func getAuthHandler(w http.ResponseWriter, r *http.Request) {
 // middleware para autenticación
 func withAuth(handler http.HandlerFunc, auth_token string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Verificar si el token de autenticación es correcto
-		if r.Header.Get("Authorization") != "Bearer "+auth_token {
+		authorizationHeader := r.Header.Get("Authorization")
+		token := strings.TrimPrefix(authorizationHeader, "Bearer ")
+
+		if token != auth_token {
 			//fmt.Println("withAuth No autorizado")
-			http.Error(w, `{"error": "No autorizado"}`, http.StatusUnauthorized)
-			return
+
+			if !oauth_token_autorizado(token) {
+
+				http.Error(w, `{"error": "No autorizado"}`, http.StatusUnauthorized)
+				return
+			}
 		}
 
 		// Ejecutar el manejador original
@@ -129,4 +136,36 @@ func errJsonStatus(w http.ResponseWriter, msg string, status int) {
 	w.WriteHeader(status)
 	data := map[string]string{"error": msg}
 	json.NewEncoder(w).Encode(data)
+}
+
+func oauth_token_autorizado(token string) bool {
+
+	auth_profile, err := AuthProfile(token)
+	if err != nil {
+		fmt.Println("oauth_token_autorizado error:", err)
+		return false
+	}
+	if auth_profile == nil {
+		fmt.Println("oauth_token_autorizado auth_profile es nil")
+		return false
+	}
+	if auth_profile.ClientID == "" {
+		fmt.Println("oauth_token_autorizado auth_profile.ClientID es nil")
+		return false
+	}
+	if auth_profile.UserID != 0 {
+		// autorizaciones de usuario
+		if auth_profile.ClientID == "ERP" {
+			fmt.Println("oauth_token_autorizado auth_profile.ClientID es ERP")
+			return true
+		}
+	} else {
+		// autorizaciones de cliente
+		if auth_profile.ClientID == "CRM" {
+			fmt.Println("oauth_token_autorizado auth_profile.ClientID es CRM")
+			return true
+		}
+	}
+
+	return false
 }
